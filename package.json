@@ -1,0 +1,13 @@
+{
+  "name": "transcendence",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "test.js",
+  "dependencies": {
+    "pino": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/pino": "^7.0.5",
+    "pino-pretty": "^10.2.0"
+  }
+}
