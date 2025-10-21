@@ -9,7 +9,7 @@ const transport = pino.transport({
         colorize: true,
         levelFirst: true,
         translateTime: "SYS:yyyy-mm-dd, HH:MM:ss",
-        messageFormat: "{levelLabel} [{time}] ({pid}): {msg}"
+        messageFormat: "{msg}"
       }
     },
     {
