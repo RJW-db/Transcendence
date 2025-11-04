@@ -1,0 +1,12 @@
+{"level":40,"time":1761061327423,"pid":65433,"hostname":"f1r3s17.codam.nl","msg":"Warning log"}
+{"level":50,"time":1761061327423,"pid":65433,"hostname":"f1r3s17.codam.nl","msg":"Error log"}
+{"level":60,"time":1761061327423,"pid":65433,"hostname":"f1r3s17.codam.nl","msg":"Fatal error occurred"}
+{"level":40,"time":1761061404069,"pid":65684,"hostname":"f1r3s17.codam.nl","msg":"Warning log"}
+{"level":50,"time":1761061404069,"pid":65684,"hostname":"f1r3s17.codam.nl","msg":"Error log"}
+{"level":60,"time":1761061404069,"pid":65684,"hostname":"f1r3s17.codam.nl","msg":"Fatal error occurred"}
+{"level":40,"time":1761061411831,"pid":65750,"hostname":"f1r3s17.codam.nl","msg":"Warning log"}
+{"level":50,"time":1761061411831,"pid":65750,"hostname":"f1r3s17.codam.nl","msg":"Error log"}
+{"level":60,"time":1761061411831,"pid":65750,"hostname":"f1r3s17.codam.nl","msg":"Fatal error occurred"}
+{"level":40,"time":1761296502823,"pid":35197,"hostname":"f0r5s2.codam.nl","msg":"Warning log"}
+{"level":50,"time":1761296502823,"pid":35197,"hostname":"f0r5s2.codam.nl","msg":"Error log"}
+{"level":60,"time":1761296502823,"pid":35197,"hostname":"f0r5s2.codam.nl","msg":"Fatal error occurred"}

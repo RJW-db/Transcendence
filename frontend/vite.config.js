@@ -12,7 +12,8 @@ export default defineConfig({
         usePolling: true
     },
     allowedHosts: [
-        'unconstrued-cayden-nonrealistically.ngrok-free.dev'
+        // 'unconstrued-cayden-nonrealistically.ngrok-free.dev'
+        'kanesha-surmisable-unintrudingly.ngrok-free.dev/'
     ],
     proxy: {
 

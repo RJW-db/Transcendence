@@ -4,21 +4,24 @@
   "description": "",
   "main": "dist/app.js",
   "scripts": {
-    "dev": "ts-node src/app.ts",
-    "build": "tsc",
-    "start": "node dist/app.js"
+    "dev:backend": "tsx watch src/backend/app.ts",
+    "dev:frontend": "vite",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fastify/websocket": "^11.x",
+    "@fastify/websocket": "^11.2.0",
     "fastify": "^5.6.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@types/ws": "^8.x",
+    "concurrently": "^9.2.1",
     "ts-node": "^10.x",
-    "typescript": "^5.9.3"
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
   }
 }
