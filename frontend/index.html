@@ -1,0 +1,117 @@
+    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Game</title>
+
+</head>
+<body>
+
+    <!-- 
+      This is the entire "stage". 
+      JavaScript will replace the content inside this div
+      with either the Lobby view or the Game view.
+    -->
+    <div id="app"></div>
+
+    <!-- The one and only script that controls everything -->
+    <script type="module" src="/src/main.ts"></script>
+
+</body>
+</html>
+
+  
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centered Vertical Line</title>
+
+</head>
+<body>
+	<header class="game-header">
+		<h1>Pong</h1>
+		<nev class="buttons">
+			<div class="tournament">
+				<button id="tournament-btn" class="leftsidebtn">Tournament</button>
+				<p id="tournament-players-error" class="error-amount-players" style="display: none;"></p>
+				<button id="add-btn" class="leftsidebtn">Add player &plus;</button>
+				<p id="aliesLeftPlayerId" class="aliesMessage"> Player 1</p>
+			</div>
+			<div class="playingButton">
+				<button id="play-btn" class="centerbtn">Start play</button>
+				<button id="pause-btn" class="centerbtn">Pause play</button>
+			</div>
+			<div class="registeringButtons">
+				<button id="register-btn" class="rightsidebtn">registration</button>
+				<button id="log-btn" class="rightsidebtn">log in</button>
+				<p id="aliesRightPlayerId" class="aliesMessage"> player 2</p>
+			</div>
+		</nev>
+	</header>
+	<dialog id="modal-addPlayer-id">
+		<div class="modal-addPlayer-content">
+			<button class="close-addPlayer-btn">&times;</button>
+			<form id="modal-form-addPlayer">
+				<div class="form-group-addPlayer">
+					<label for="alies">Alies</label>
+					<input type="text" id="alies" name="alies" required>
+				</div>
+				<button type="submit" id="modal-submit-addPlayer-btn">Submit</button>
+			</form>
+		</div>
+	</dialog>
+		
+	<main class="game-aria">
+		<div id="ceiling" class="top-line"></div>
+		<div class="insideGround">
+			<div class="leftSide">
+				<div id="left-goal" class="goal"></div>
+				<div id="left-paddle" class="side-line"></div>
+				<div id="left-score" class="score" aria-live="polite">0</div>
+			</div>
+			<div class="center">
+				<div id="ball" class="ball"></div>
+				<div class="vertical-dash-line"></div>
+			</div>
+			<div class="rightSide">
+				<div id="right-score" class="score" aria-live="polite">0</div>
+				<div id="right-paddle" class="side-line"></div>
+				<div id="right-goal" class="goal"></div>
+			</div>
+		</div>
+		<div id="floor" class="bottom-line"></div>
+	</main>
+	<dialog id="modal-overlay" hidden>
+		<div class="modal-content">
+			<button class="close-btn">&times;</button>
+			<h2 id="modal-title">modal-title</h2>
+			<form id="modal-form">
+				<div class="form-group">
+					<label for="username">Username</label>
+					<input type="text" id="username" name="username" required>
+				</div>
+				<div class="form-group">
+					<label for="password">Password</label>
+					<input type="password" id="password" name="password" required>
+				</div>
+				<div class="form-group" id="confirm-password-group" style="display: none;">
+					<label for="confirm-password">Confirm Password</label>
+					<input type="password" id="confirm-password" name="confirm-password" required>
+					<p id="password-error" class="error-message"></p>
+				</div>
+				<button type="submit" id="modal-submit-btn">Submit</button>
+			</form>
+		</div>
+	</dialog>
+	<script type="module" src="/src/main.ts"></script>
+
+</body>
+</html> -->
+
