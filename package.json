@@ -5,11 +5,14 @@
   "main": "test.js",
   "dependencies": {
     "pino": "^8.21.0",
-    "argon2": "latest"
+    "argon2": "latest",
+    "qrcode": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
     "@types/pino": "^7.0.5",
-    "pino-pretty": "^10.2.0"
+    "pino-pretty": "^10.2.0",
+    "@types/qrcode": "latest",
+    "typescript": "latest"
   }
 }

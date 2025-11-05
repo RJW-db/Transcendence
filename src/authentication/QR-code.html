@@ -1,0 +1,36 @@
+<!-- npx tsc src/authentication/QR-code.ts --outDir dist -->
+<!-- drag QRcode.html into browser to test -->
+<!-- File: qr.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR Code Generator</title>
+</head>
+<body>
+  <h1>QR Code Generator</h1>
+  <input type="text" id="qr-input" placeholder="Type text here" />
+  <button id="qr-btn">Generate QR Code</button>
+  <div id="qr-result"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"></script>
+  <script>
+    document.getElementById('qr-btn').addEventListener('click', function () {
+      const text = document.getElementById('qr-input').value;
+      const qrResult = document.getElementById('qr-result');
+      // Clear previous result
+      qrResult.innerHTML = '';
+      // Generate new QR code
+      QRCode.toDataURL(text, function (err, url) {
+        if (err) {
+          qrResult.textContent = 'Error generating QR code';
+          return;
+        }
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'QR code';
+        qrResult.appendChild(img);
+      });
+    });
+  </script>
+</body>
+</html>
