@@ -12,6 +12,22 @@ clean:
 		rm -rf ./backend/data
 		rm -rf ./backend/dist
 
+allclean: clean
+# Stop and remove all containers, networks, and volumes defined in your compose file
+	docker compose down -v
+# If you want to remove images as well
+	docker compose down -v --rmi all
+# Additional cleanup commands if needed	:
+# Remove all stopped containers
+	docker container prune -f
+# Remove all unused networks
+	docker network prune -f
+# Remove all unused volumes
+	docker volume prune -f
+# Remove all unused images
+	docker image prune -a -f
+# Nuclear option - remove EVERYTHING (use with caution)
+	docker system prune -a --volumes -f
 
 # hierna even een nieuwe terminal openen.
 nodeV:
@@ -23,3 +39,4 @@ nodeV:
 
 re: down all
 .PHONY: all build up down cleans
+

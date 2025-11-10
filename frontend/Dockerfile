@@ -11,7 +11,7 @@ COPY package*.json ./
 # RUN npm install -g npm@11.6.2
 
 # Install app dependencies
-RUN npm install
+RUN npm install && npm install vite
 
 # Copy the rest of the application source code
 COPY . .
