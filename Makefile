@@ -7,10 +7,18 @@ up:
 		docker compose up -d
 down:
 		docker compose down
-clean:
+clean: kill-ngrok
 		docker compose down --volumes
 		rm -rf ./backend/data
 		rm -rf ./backend/dist
+		rm -rf ./node_modules
+
+ngrok:
+		npm install ngrok
+		./node_modules/.bin/ngrok config add-authtoken 34hJ1Eb9BW0CxXEtYKAiG3j0tdm_3FWVar2HWBSqhRQMDxCVk
+		./node_modules/.bin/ngrok http 8080
+kill-ngrok:
+		pkill -f ngrok
 
 allclean: clean
 # Stop and remove all containers, networks, and volumes defined in your compose file
