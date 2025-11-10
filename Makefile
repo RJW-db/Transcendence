@@ -9,6 +9,9 @@ down:
 		docker compose down
 clean:
 		docker compose down --volumes
+		rm -rf ./backend/data
+		rm -rf ./backend/dist
+
 
 # hierna even een nieuwe terminal openen.
 nodeV:
