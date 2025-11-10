@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOTP 2FA Setup & Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    input {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 0;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .hidden {
+      display: none;
+    }
+    .message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    #qr-code img {
+      max-width: 100%;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Two-Factor Authentication Setup</h1>
+  
+  <div class="section">
+    <h2>Step 1: Setup 2FA</h2>
+    <label for="username-input">Enter your email:</label>
+    <input type="email" id="username-input" placeholder="user@example.com" />
+    <button id="setup-btn">Generate QR Code</button>
+    
+    <div id="qr-code" class="hidden"></div>
+    
+    <div id="secret-display" class="hidden">
+      <p><strong>Manual entry key:</strong></p>
+      <p id="secret-text" style="font-family: monospace; word-break: break-all;"></p>
+    </div>
+  </div>
+  
+  <div id="verify-section" class="section hidden">
+    <h2>Step 2: Verify Token</h2>
+    <p>Enter the 6-digit code from your authenticator app:</p>
+    <label for="token-input">6-digit code:</label>
+    <input type="text" id="token-input" placeholder="123456" maxlength="6" />
+    <button id="verify-btn">Verify Token</button>
+    <div id="verify-message"></div>
+  </div>
+
+  <script type="module" src="/src/authentication/TOTP-app.js"></script>
+</body>
+</html>
