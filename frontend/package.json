@@ -4,7 +4,8 @@
   "description": "",
   "main": "dist/app.js",
   "scripts": {
-    "dev:frontend": "vite"
+    "install": "npm install vite",
+    "dev:frontend": "npm run install && vite"
   },
   "keywords": [],
   "author": "",

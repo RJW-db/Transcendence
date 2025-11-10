@@ -7,11 +7,13 @@ up:
 		docker compose up -d
 down:
 		docker compose down
-clean: kill-ngrok
+clean: 
 		docker compose down --volumes
 		rm -rf ./backend/data
 		rm -rf ./backend/dist
 		rm -rf ./node_modules
+		rm -rf ./frontend/node_modules
+		rm -rf ./backend/node_modules
 
 ngrok:
 		npm install ngrok
