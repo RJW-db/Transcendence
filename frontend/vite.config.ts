@@ -6,8 +6,7 @@ export default defineConfig({
     port: 5173,
 	host: '0.0.0.0',
 	allowedHosts: [
-        'nondeprecatory-hyperexcursively-laverna.ngrok-free.dev'
-		// 'unconstrued-cayden-nonrealistically.ngrok-free.dev'
+    'nondeprecatory-hyperexcursively-laverna.ngrok-free.dev'
 	],
     proxy: {
       '/ws': {

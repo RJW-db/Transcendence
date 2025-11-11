@@ -19,3 +19,10 @@ ws.onclose = () => {
   console.log('Disconnected from server');
 };
 
+
+// Button event listener
+const button = document.getElementById('myButton') as HTMLButtonElement;
+button.addEventListener('click', () => {
+  console.log('Button clicked');
+  ws.send('Button was clicked!');
+});

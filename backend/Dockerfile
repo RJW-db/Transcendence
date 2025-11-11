@@ -11,11 +11,14 @@ COPY package*.json ./
 # RUN npm install -g npm@11.6.2
 
 # Install app dependencies
-RUN npm install
+RUN apk update && \
+    apk add make sqlite && \
+    npm install
 
 # Copy the rest of the application source code
 COPY . .
 
+RUN make -C prisma
 # Build the TypeScript application
 # RUN npm run build
 

@@ -11,21 +11,41 @@ down:
 	docker compose down
 
 ngrok_install:
-	@if [ ! -f ./node_modules/.bin/ngrok ]; then \
-		echo "Installing ngrok..."; \
-		npm install ngrok; \
-		./node_modules/.bin/ngrok config add-authtoken 34hJ1Eb9BW0CxXEtYKAiG3j0tdm_3FWVar2HWBSqhRQMDxCVk; \
-		echo "ngrok installed and configured!"; \
-	else \
-		echo "ngrok already installed"; \
-	fi
+	./test.sh
+
+# 	@if [ ! -f .env ]; then \
+# 		echo "ERROR: .env file not found!"; \
+# 		echo "Copy .env.example to .env and add your NGROK_AUTHTOKEN"; \
+# 		exit 1; \
+# 	fi
+# 	@if [ ! -f ./node_modules/.bin/ngrok ]; then \
+# 		echo "Installing ngrok..."; \
+# 		npm install ngrok; \
+# 		. ./.env && ./node_modules/.bin/ngrok config add-authtoken $$NGROK_AUTHTOKEN; \
+# 		if [ -n "$$NGROK_URL" ]; then \
+# 			sed -i "s|allowedHosts: \[.*\]|allowedHosts: ['$$NGROK_URL']|" ./frontend/vite.config.ts; \
+# 			echo "Updated allowedHosts to: $$NGROK_URL"; \
+# 		else \
+# 			echo "ERROR: Could not get ngrok URL"; \
+# 		fi
+# 		echo "ngrok installed and configured!"; \
+# 	else \
+# 		echo "ngrok already installed"; \
+# 	fi
+
+
 
 ngrok: kill-ngrok
+	@if [ ! -f .env ]; then \
+		echo "ERROR: .env file not found!"; \
+		exit 1; \
+	fi
 	@echo "Starting ngrok tunnel on port 8080..."
 	@./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 &
 	@sleep 2
 	@echo "ngrok started in background"
 	@echo "Check status: http://localhost:4040"
+	@make ngrok-url
 
 ngrok-url:
 	@curl -s http://localhost:4040/api/tunnels | grep -o '"public_url":"[^"]*' | grep -o 'https://[^"]*' || echo "ngrok not running"

@@ -1,5 +1,7 @@
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
+const { PrismaClient} = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
@@ -39,6 +41,17 @@ const start = async () => {
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     fastify.log.info(`Server listening on http://0.0.0.0:8080`);
     fastify.log.info(`WebSocket endpoint: ws://0.0.0.0:8080/ws`);
+  //   const user = await prisma.user.create({
+	// 	data: {
+	// 		Alias: 'TestUser',
+	// 		Email: 'test@test.com',
+	// 		Password: 'password123',
+	// 		Online: true,
+	// 		CreationDate: new Date(),
+	// 	},
+	// });
+
+	// console.log('Created User:', user);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
