@@ -6,16 +6,16 @@ export default defineConfig({
     port: 5173,
 	host: '0.0.0.0',
 	allowedHosts: [
-        'kanesha-surmisable-unintrudingly.ngrok-free.dev'
+        'nondeprecatory-hyperexcursively-laverna.ngrok-free.dev'
 		// 'unconstrued-cayden-nonrealistically.ngrok-free.dev'
 	],
     proxy: {
       '/ws': {
-        target: 'ws://localhost:3000',
-        ws: true
+        target: 'ws://backend:3000',
+        ws: true,
       },
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://backend:3000',
         changeOrigin: true
       }
     }

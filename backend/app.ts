@@ -9,24 +9,28 @@ const fastify = Fastify({
 fastify.register(websocket);
 
 // Define a WebSocket route
-fastify.get('/ws', { websocket: true }, (socket, req) => {
-  	socket.on('message', message => {
-    // Echo back the message received from the client
-    socket.send(`Echo from server: ${message}`);
-    fastify.log.info(`Received: ${message}`);
-  });
+fastify.register(async function (fastify: any) {
 
-  socket.on('close', () => {
-    fastify.log.info('WebSocket connection closed.');
-  });
+  fastify.get('/ws', { websocket: true }, (socket : any, req : any) => {
+      socket.on('message', (message: any) => {
+      // Echo back the message received from the client
+      socket.send(`Echo from server: ${message}`);
+      fastify.log.info(`Received: ${message}`);
+      });
 
-  socket.on('error', (error) => {
-    fastify.log.error('WebSocket error:');
-  });
+    socket.on('close', () => {
+      fastify.log.info('WebSocket connection closed.');
+    });
 
-  // Send a welcome message when a client connects
-  socket.send('Welcome to the Fastify WebSocket server!');
+    socket.on('error', (error : any) => {
+      fastify.log.error('WebSocket error:');
+    });
+
+    // Send a welcome message when a client connects
+    socket.send('Welcome to the Fastify WebSocket server!');
+  });
 });
+
 
 // Start the server
 const start = async () => {
@@ -42,3 +46,4 @@ const start = async () => {
 };
 
 start();
+
