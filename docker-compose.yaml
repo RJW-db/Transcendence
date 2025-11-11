@@ -6,8 +6,8 @@ services:
       context: ./frontend
     working_dir: /app
     user: root
-    volumes:
-      - ./frontend:/app
+    # volumes:
+      # - ./frontend:/app
       # - /app/node_modules
     ports:
       # The user still accesses the website on port 8080
@@ -26,7 +26,7 @@ services:
     user: root
     volumes:
       # Map a new 'backend' folder on your computer into the container
-      - ./backend:/app
+      # - ./backend:/app
       # - /app/node_modules
       - ./backend/data:/app/data
     ports:
