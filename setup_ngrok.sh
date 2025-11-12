@@ -23,14 +23,10 @@ if [ ! -f ./node_modules/.bin/ngrok ]; then
         # Extract just the domain from the URL (remove https://)
         NGROK_DOMAIN=$(echo "$NGROK_SITE" | sed 's|https://||' | sed 's|http://||')
         
-        # Check if domain already exists in allowedHosts
-        if grep -q "$NGROK_DOMAIN" ./frontend/vite.config.ts; then
-            echo "Domain $NGROK_DOMAIN already exists in allowedHosts"
-        else
-            # Add the domain to allowedHosts array in vite.config.ts
-            sed -i "/allowedHosts: \[/a\\    '$NGROK_DOMAIN'" ./frontend/vite.config.ts
-            echo "Updated allowedHosts with: $NGROK_DOMAIN"
-        fi
+        # Use perl for multiline replacement (more reliable than sed for this case)
+        perl -i -0pe "s/allowedHosts: \[.*?\]/allowedHosts: [\n    '$NGROK_DOMAIN'\n\t]/s" ./frontend/vite.config.ts
+        
+        echo "Updated allowedHosts with: $NGROK_DOMAIN"
     else
         echo "WARNING: NGROK_SITE not set in .env file"
     fi

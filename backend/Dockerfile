@@ -6,9 +6,7 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json (or yarn.lock)
 # to install dependencies
-COPY package*.json ./
-
-# RUN npm install -g npm@11.6.2
+COPY package*.json .
 
 # Install app dependencies
 RUN apk update && \
@@ -16,15 +14,17 @@ RUN apk update && \
     npm install
 
 # Copy the rest of the application source code
-COPY . .
+COPY prisma/schema.prisma ./prisma/
+RUN npx prisma generate
 
-RUN make -C prisma
+COPY app.ts ./
+COPY tsconfig.json ./
+
 # Build the TypeScript application
-# RUN npm run build
+RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Define the command to run your app
+# Define the command to run your app with database initialization
 CMD [ "npm", "run", "start" ]
-

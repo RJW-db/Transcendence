@@ -1,5 +1,5 @@
 
-all: build up
+all: db build up
 
 build: ngrok_install ngrok
 	docker compose build
@@ -10,30 +10,16 @@ up:
 down:
 	docker compose down
 
+db:
+	@echo "Setting up database..."
+	$(MAKE) -C backend/prisma all
+
+db-rm:
+	@echo "Resetting database..."
+	$(MAKE) -C backend/prisma fclean
+
 ngrok_install:
-	./test.sh
-
-# 	@if [ ! -f .env ]; then \
-# 		echo "ERROR: .env file not found!"; \
-# 		echo "Copy .env.example to .env and add your NGROK_AUTHTOKEN"; \
-# 		exit 1; \
-# 	fi
-# 	@if [ ! -f ./node_modules/.bin/ngrok ]; then \
-# 		echo "Installing ngrok..."; \
-# 		npm install ngrok; \
-# 		. ./.env && ./node_modules/.bin/ngrok config add-authtoken $$NGROK_AUTHTOKEN; \
-# 		if [ -n "$$NGROK_URL" ]; then \
-# 			sed -i "s|allowedHosts: \[.*\]|allowedHosts: ['$$NGROK_URL']|" ./frontend/vite.config.ts; \
-# 			echo "Updated allowedHosts to: $$NGROK_URL"; \
-# 		else \
-# 			echo "ERROR: Could not get ngrok URL"; \
-# 		fi
-# 		echo "ngrok installed and configured!"; \
-# 	else \
-# 		echo "ngrok already installed"; \
-# 	fi
-
-
+	./setup_ngrok.sh
 
 ngrok: kill-ngrok
 	@if [ ! -f .env ]; then \
@@ -56,6 +42,7 @@ kill-ngrok:
 	fi
 
 clean: kill-ngrok
+	$(MAKE) -C backend/prisma clean
 	docker compose down --volumes
 	rm -rf ./backend/data
 	rm -rf ./backend/dist

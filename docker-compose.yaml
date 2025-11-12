@@ -29,6 +29,7 @@ services:
       # - ./backend:/app
       # - /app/node_modules
       - ./backend/data:/app/data
+      - ./backend/prisma/database:/app/prisma/database:rw
     ports:
       # We'll expose the backend on port 3000
       - "3000:3000"

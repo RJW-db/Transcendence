@@ -41,17 +41,41 @@ const start = async () => {
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     fastify.log.info(`Server listening on http://0.0.0.0:8080`);
     fastify.log.info(`WebSocket endpoint: ws://0.0.0.0:8080/ws`);
-  //   const user = await prisma.user.create({
-	// 	data: {
-	// 		Alias: 'TestUser',
-	// 		Email: 'test@test.com',
-	// 		Password: 'password123',
-	// 		Online: true,
-	// 		CreationDate: new Date(),
-	// 	},
-	// });
+    // const user = await prisma.user.create({
+    //   data: {
+    //     Alias: 'TestUser',
+    //     Email: 'test@test.com',
+    //     Password: 'password123',
+    //     Online: true,
+    //     CreationDate: new Date(),
+    //   },
+    // });
+	  // console.log('Created User:', user);
 
-	// console.log('Created User:', user);
+    let user = await prisma.user.findUnique({
+      where: { Email: 'test@test.com' }
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          Alias: 'TestUser',
+          Email: 'test@test.com',
+          Password: 'password123',
+          Online: true,
+          CreationDate: new Date(),
+        },
+      });
+      console.log('Created User:', user);
+    } else {
+      console.log('Found existing User:', user);
+    }
+
+    // const userByEmail = await prisma.user.findUnique({
+    //   where: { Email: 'test@test.com' }
+    // });
+    // console.log('User by Email:', userByEmail);
+
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
