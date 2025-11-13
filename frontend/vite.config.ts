@@ -6,7 +6,7 @@ export default defineConfig({
     port: 5173,
 	host: '0.0.0.0',
 	allowedHosts: [
-    'kanesha-surmisable-unintrudingly.ngrok-free.dev'
+    'unconstrued-cayden-nonrealistically.ngrok-free.dev'
 	],
     proxy: {
       '/ws': {
