@@ -1,5 +1,8 @@
 import Fastify from 'fastify';
 import websocket from '@fastify/websocket';
+//the import from ws is only for the socket: type because typescript can't reduce the socket type because of the fastify wrapper
+import { WebSocket } from 'ws';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -11,10 +14,10 @@ const fastify = Fastify({
 fastify.register(websocket);
 
 // Define a WebSocket route
-fastify.register(async function (fastify: any) {
+fastify.register(async function (fastify: FastifyInstance) {
 
-  fastify.get('/ws', { websocket: true }, (socket : any, req : any) => {
-      socket.on('message', (message: any) => {
+  fastify.get('/ws', { websocket: true }, (socket : WebSocket, req : FastifyRequest) => {
+      socket.on('message', (message: Buffer) => {
       // Echo back the message received from the client
       socket.send(`Echo from server: ${message}`);
       fastify.log.info(`Received: ${message}`);
@@ -24,7 +27,7 @@ fastify.register(async function (fastify: any) {
       fastify.log.info('WebSocket connection closed.');
     });
 
-    socket.on('error', (error : any) => {
+    socket.on('error', (error : Error) => {
       fastify.log.error('WebSocket error:');
     });
 
