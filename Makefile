@@ -49,6 +49,10 @@ clean: kill-ngrok
 	rm -rf ./node_modules
 	rm -rf ./frontend/node_modules
 	rm -rf ./backend/node_modules
+	rm -rf ./node_modules
+	rm -rf ./package-lock.json
+	rm -rf ./backend/package-lock.json
+	rm -rf ./frontend/package-lock.json
 		
 allclean: clean
 # Stop and remove all containers, networks, and volumes defined in your compose file
