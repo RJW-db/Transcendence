@@ -1,10 +1,10 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
 import websocket from '@fastify/websocket';
-//the import from ws is only for the socket: type because typescript can't reduce the socket type because of the fastify wrapper
 import { WebSocket } from 'ws';
-import { FastifyInstance, FastifyRequest } from 'fastify';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
+
+import { messageHandlers } from './messageHandler';
 
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
@@ -18,9 +18,35 @@ fastify.register(async function (fastify: FastifyInstance) {
 
   fastify.get('/ws', { websocket: true }, (socket : WebSocket, req : FastifyRequest) => {
       socket.on('message', (message: Buffer) => {
+
+      
+        const data = JSON.parse(message.toString());
+        
+        // Handle different message types
+        // switch (data.type) {
+        //   case 'Register':
+        //     {
+        //       const userinfo : {Alias : string, Email : string, Password : string} = data.Payload;
+        //       console.log('Registering user:', userinfo.Email);
+        //       // handleRegister(socket, data.payload);
+        //       break;
+        //     }
+        //   default:
+        //     socket.send(JSON.stringify({ error: 'Unknown message type' }));
+        // }
+
+        const handler = messageHandlers[data.type];
+        if (data.type) {
+          handler(socket, data.Payload, prisma, fastify);
+        } else {
+          console.log('No handler for message type:', data.type);
+          // crash
+        }
+
+
       // Echo back the message received from the client
-      socket.send(`Echo from server: ${message}`);
-      fastify.log.info(`Received: ${message}`);
+      // socket.send(`Echo from server: ${message}`);
+      // fastify.log.info(`Received: ${message}`);
       });
 
     socket.on('close', () => {
@@ -44,40 +70,30 @@ const start = async () => {
     await fastify.listen({ port: 3000, host: '0.0.0.0' });
     fastify.log.info(`Server listening on http://0.0.0.0:8080`);
     fastify.log.info(`WebSocket endpoint: ws://0.0.0.0:8080/ws`);
-    // const user = await prisma.user.create({
-    //   data: {
-    //     Alias: 'TestUser',
-    //     Email: 'test@test.com',
-    //     Password: 'password123',
-    //     Online: true,
-    //     CreationDate: new Date(),
-    //   },
+
+    // let user = await prisma.user.findFirst({
+    //   where: { 
+    //     OR: [
+    //       { Alias: 'Testuser' },
+    //       { Email: 'test@test.com' }
+    //     ]
+    //   }
     // });
-	  // console.log('Created User:', user);
 
-    let user = await prisma.user.findUnique({
-      where: { Email: 'test@test.com' }
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          Alias: 'TestUser',
-          Email: 'test@test.com',
-          Password: 'password123',
-          Online: true,
-          CreationDate: new Date(),
-        },
-      });
-      console.log('Created User:', user);
-    } else {
-      console.log('Found existing User:', user);
-    }
-
-    // const userByEmail = await prisma.user.findUnique({
-    //   where: { Email: 'test@test.com' }
-    // });
-    // console.log('User by Email:', userByEmail);
+    // if (!user) {
+    //   user = await prisma.user.create({
+    //     data: {
+    //       Alias: 'TestUser',
+    //       Email: 'test@test.com',
+    //       Password: 'password123',
+    //       Online: true,
+    //       CreationDate: new Date(),
+    //     },
+    //   });
+    //   console.log('Created User:', user);
+    // } else {
+    //   console.log('Found existing User:', user);
+    // }
 
   } catch (err) {
     fastify.log.error(err);
