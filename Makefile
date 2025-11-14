@@ -1,5 +1,5 @@
 
-all: db build up
+all: build up
 
 build: ngrok_install ngrok
 	docker compose build
@@ -10,13 +10,9 @@ up:
 down:
 	docker compose down
 
-db:
-	@echo "Setting up database..."
-	$(MAKE) -C backend/prisma all
-
 db-rm:
 	@echo "Resetting database..."
-	$(MAKE) -C backend/prisma fclean
+	rm -rf backend/prisma/database/
 
 ngrok_install:
 	./setup_ngrok.sh
@@ -42,7 +38,6 @@ kill-ngrok:
 	fi
 
 clean: kill-ngrok
-	$(MAKE) -C backend/prisma clean
 	docker compose down --volumes
 	rm -rf ./backend/data
 	rm -rf ./backend/dist
