@@ -39,6 +39,10 @@ async function handleRegister(
         fastify.log.info(`User already exists: ${JSON.stringify(user)}`);
         // fastify.log.info({ user }, 'User already exists');
         console.log('User already exists:', user);
+		socket.send(JSON.stringify({
+			type: 'RegisterResponse',
+        	success: false
+		}))
       return;
     }
 
@@ -52,6 +56,10 @@ async function handleRegister(
         CreationDate: new Date(),
       },
     });
+	socket.send(JSON.stringify({
+			type: 'RegisterResponse',
+        	success: true
+		}))
     fastify.log.info(`User already exists: ${JSON.stringify(user)}`);
     // socket.send(JSON.stringify({
     //   type: 'RegisterResponse',

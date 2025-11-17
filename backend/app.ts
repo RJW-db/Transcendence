@@ -58,7 +58,7 @@ fastify.register(async function (fastify: FastifyInstance) {
     });
 
     // Send a welcome message when a client connects
-    socket.send('Welcome to the Fastify WebSocket server!');
+   socket.send('Welcome to the Fastify WebSocket server!');
   });
 });
 

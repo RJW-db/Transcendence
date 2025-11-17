@@ -9,7 +9,36 @@ ws.onopen = () => {
 
 ws.onmessage = (event) => {
   console.log('Received:', event.data);
-};
+  try{
+	const data = JSON.parse(event.data);
+	if(data.type){
+		const handler = responseHandlers[data.type];
+		handler(data);
+	}
+  }catch{
+	console.log('JSON parse failed');
+  }
+  
+
+	
+ 
+  }
+//   const response = document.getElementById('serverResponse') as HTMLElement;
+//   if (data.type === 'LoginResponse'){
+// 	if (data.success === true){
+// 		response.style.color = 'green';
+// 		response.style.fontSize = '24px';
+// 		response.textContent = 'you are successfully logged in';
+// 	}else {
+// 		response.style.color = 'red';
+// 		response.style.fontSize = '24px';
+// 		response.textContent = 'Invalid login attempt';
+// 	}
+//   }
+
+
+  
+// };
 
 ws.onerror = (error) => {
   console.error('WebSocket error:', error);
@@ -18,6 +47,44 @@ ws.onerror = (error) => {
 ws.onclose = () => {
   console.log('Disconnected from server');
 };
+
+
+
+export type ResponseHandler = (
+  data: any
+
+) => Promise<void> | void;
+
+export const responseHandlers: Record<string, ResponseHandler> = {
+  'RegisterResponse': handleRegisterResponse,
+  'LoginResponse': handleLoginResponse
+};
+
+function	handleRegisterResponse(data: any){
+	const response = document.getElementById('serverResponse') as HTMLElement;
+	if (data.success === true){
+		response.style.color = 'green';
+		response.style.fontSize = '24px';
+		response.textContent = 'you are successfully register';
+	}else {
+		response.style.color = 'red';
+		response.style.fontSize = '24px';
+		response.textContent = 'can\'t register use other alias or email';
+	}
+}
+function	handleLoginResponse(data: any){
+	const response = document.getElementById('serverResponse') as HTMLElement;
+	if (data.success === true){
+		response.style.color = 'green';
+		response.style.fontSize = '24px';
+		response.textContent = 'you are successfully logged in';
+	}else {
+		response.style.color = 'red';
+		response.style.fontSize = '24px';
+		response.textContent = 'Invalid login attempt';
+	}
+
+}
 
 
 // // Button event listener
