@@ -1,10 +1,12 @@
-import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
 import websocket from '@fastify/websocket';
 import { WebSocket } from 'ws';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 
 import { messageHandlers } from './messageHandler';
+import { apimessageHandlers, ApiMessageHandler } from './messageHandler';
+
 
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
@@ -60,6 +62,29 @@ fastify.register(async function (fastify: FastifyInstance) {
     // Send a welcome message when a client connects
    socket.send('Welcome to the Fastify WebSocket server!');
   });
+});
+
+
+fastify.register(async function (fastify: FastifyInstance) {
+	fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
+		try{
+			//const	data = JSON.parse(request.body as string);
+			// connect to db and return the result
+
+			const	data = request.body as any;
+			if (data.type) {
+				const	apiHandler = apimessageHandlers[data.type];
+				apiHandler(data.Payload, prisma, fastify, reply);
+			}
+			
+		}catch{
+			console.log('faild to parse or no type !')
+			reply.status(401).send({message: `Bad request!`})
+		}
+		
+		
+
+	})
 });
 
 
