@@ -4,8 +4,8 @@
   "description": "",
   "main": "dist/app.js",
   "scripts": {
-    "dev:backend": "tsx watch app.ts",
-    "dev": "run dev:backend"
+    "install": "npm install vite",
+    "dev:frontend": "npm run install && vite"
   },
   "keywords": [],
   "author": "",
