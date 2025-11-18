@@ -1,7 +1,6 @@
 import { WebSocket } from 'ws';
 import { PrismaClient } from '@prisma/client';
-//import { FastifyInstance } from 'fastify';
-import Fastify, { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
+import { FastifyInstance } from 'fastify';
 // const prisma = new PrismaClient();
 
 export type MessageHandler = (
@@ -15,83 +14,6 @@ export const messageHandlers: Record<string, MessageHandler> = {
   'Register': handleRegister,
   'Login': handleLogin
 };
-
-
-export type ApiMessageHandler = (
-  payload: any,
-  prisma: PrismaClient,
-  fastify: FastifyInstance,
-  reply: FastifyReply
-) => Promise<void> | void;
-
-export const apimessageHandlers: Record<string, ApiMessageHandler> = {
-  'Register': apiHandleRegister,
-  'Login': apiHandleLogin
-};
-
-async function apiHandleRegister(
-	payload: { Alias: string; Email: string; Password: string },
-	prisma: PrismaClient,
-	fastify: FastifyInstance,
-	reply: FastifyReply
-) {
-	try {
-
-		let user = await prisma.user.findFirst({
-			where: { 
-				OR: [
-				{ Alias: payload.Alias },
-				{ Email: payload.Email }
-				]
-			}
-		});
-		if (user) {
-			console.log('User already exists:', user);
-			reply.status(401).send({message: `choose other Alias and Email please!`})
-			return;
-		}
-		user = await prisma.user.create({
-			data: {
-				Alias: payload.Alias,
-				Email: payload.Email,
-				Password: payload.Password,
-				Online: true,
-				CreationDate: new Date(),
-			},
-		});
-		reply.status(201).send({message: `successfully registerd!`})
-	} catch (error) {
-    console.error('Registration error:', error);
-  }
-
-}
-
-async function apiHandleLogin(
-	payload: { Alias: string; Password: string },
-	prisma: PrismaClient,
-	fastify: FastifyInstance,
-	reply: FastifyReply
-){
-	let	user = await prisma.user.findFirst({
-		where: {
-			AND: [
-				{ Alias : payload.Alias },
-				{Password : payload.Password}
-			]
-		}
-	})
-	console.log(`alias is ${payload.Alias}`);
-	if (user){
-		reply.status(201).send({message: `User can log in successfully!`})
-
-	}else{
-		reply.status(401).send({message: `User can log in successfully!`})
-		console.log(`api handle log in invalid log info`);
-	}
-	
-}
-
-
 
 async function handleRegister(
   socket: WebSocket,
@@ -117,10 +39,6 @@ async function handleRegister(
         fastify.log.info(`User already exists: ${JSON.stringify(user)}`);
         // fastify.log.info({ user }, 'User already exists');
         console.log('User already exists:', user);
-		socket.send(JSON.stringify({
-			type: 'RegisterResponse',
-        	success: false
-		}))
       return;
     }
 
@@ -134,10 +52,6 @@ async function handleRegister(
         CreationDate: new Date(),
       },
     });
-	socket.send(JSON.stringify({
-			type: 'RegisterResponse',
-        	success: true
-		}))
     fastify.log.info(`User already exists: ${JSON.stringify(user)}`);
     // socket.send(JSON.stringify({
     //   type: 'RegisterResponse',

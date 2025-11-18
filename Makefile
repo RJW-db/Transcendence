@@ -7,7 +7,7 @@ build: ngrok_install ngrok
 up:
 	docker compose up -d
 
-down:
+down: kill-ngrok
 	docker compose down
 
 db-rm:
