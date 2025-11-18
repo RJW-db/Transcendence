@@ -18,6 +18,8 @@ COPY prisma/schema.prisma ./prisma/
 COPY prisma/config/pong_schema.sql ./prisma/config/
 RUN mkdir ./prisma/database
 RUN npx --yes prisma generate
+# COPY node_modules/.prisma ./node_modules/.prisma
+# COPY node_modules/@prisma/client ./node_modules/@prisma/client
 
 COPY app.ts  ./
 COPY messageHandler.ts ./
