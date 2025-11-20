@@ -1,0 +1,55 @@
+services:
+  # This is the NEW frontend service, configured for production
+  frontend:
+    # image: node:20-alpine # Use the official, lightweight Nginx image
+    build:
+      context: ./frontend
+    working_dir: /app
+    user: root
+    # volumes:
+      # - ./frontend:/app
+      # - /app/node_modules
+    ports:
+      # The user still accesses the website on port 8080
+      - "8080:5173"
+    # command: sh -c "npm install && npm run dev"
+    # depends_on:
+    #   backend:
+    #     condition: service_healthy
+    networks:
+      - app-network
+  backend:
+    # image: node:20-alpine # We can use the same Node.js image
+    build:
+      context: ./backend
+    working_dir: /app
+    user: root
+    volumes:
+    #   # Map a new 'backend' folder on your computer into the container
+    #   # - ./backend:/app
+    #   # - /app/node_modules
+    #   # - ./backend/data:/app/data
+      - ./backend/prisma/database:/app/prisma/database:rw
+    ports:
+      # We'll expose the backend on port 3000
+      - "3000:3000"
+    networks:
+      - app-network
+    # healthcheck:
+    #   # The command Docker runs inside the container to check its health.
+    #   # `curl -f` will exit with an error code if the HTTP request fails.
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    #   interval: 20s        # Check every 30 seconds
+    #   timeout: 10s         # Wait up to 10 seconds for the check to respond
+    #   retries: 3           # Try 3 times before marking the service as unhealthy
+    #   start_period: 30s
+
+    # command: sh -c "apk add --no-cache curl python3 make g++ && npm install && npm run start"
+
+# Define the network at the bottom
+networks:
+  app-network:
+    driver: bridge
+
+
+
