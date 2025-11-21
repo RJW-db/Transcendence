@@ -1,104 +1,63 @@
 import { WebSocket } from 'ws';
 import { PrismaClient } from '@prisma/client';
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply} from 'fastify';
 // const prisma = new PrismaClient();
 
-export type MessageHandler = (
-  socket: WebSocket,
+
+export type ApiMessageHandler = (
   payload: any,
   prisma: PrismaClient,
-  fastify: FastifyInstance
+  fastify: FastifyInstance,
+  reply: FastifyReply
 ) => Promise<void> | void;
 
-export const messageHandlers: Record<string, MessageHandler> = {
-  'Register': handleRegister,
-  'Login': handleLogin
+export const apimessageHandlers: Record<string, ApiMessageHandler> = {
+  'oauthLogin': apiHandleOAuthLogin
 };
 
-async function handleRegister(
-  socket: WebSocket,
-  payload: { Alias: string; Email: string; Password: string },
-  prisma: PrismaClient,
-  fastify: FastifyInstance
+async function apiHandleOAuthLogin(
+  payload: { Token: string },
+	prisma: PrismaClient,
+	fastify: FastifyInstance,
+	reply: FastifyReply
 ) {
-  try {
-    fastify.log.info(`Registering user: ${payload.Email}`);
-    // console.log('Registering user:', payload.Email);
-    
-    // Check if user exists
-    let user = await prisma.user.findFirst({
-      where: { 
-        OR: [
-          { Alias: payload.Alias },
-          { Email: payload.Email }
-        ]
+    fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+        fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+     const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${payload.Token}`
       }
     });
-
-    if (user) {
-        fastify.log.info(`User already exists: ${JSON.stringify(user)}`);
-        // fastify.log.info({ user }, 'User already exists');
-        console.log('User already exists:', user);
+    if (!response.ok) {
+      fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
+      reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
       return;
     }
-
-    // Create user
-    user = await prisma.user.create({
-      data: {
-        Alias: payload.Alias,
-        Email: payload.Email,
-        Password: payload.Password, // TODO: Hash password!
-        Online: true,
-        CreationDate: new Date(),
-      },
-    });
-    fastify.log.info(`User already exists: ${JSON.stringify(user)}`);
-    // socket.send(JSON.stringify({
-    //   type: 'RegisterResponse',
-    //   success: true,
-    //   user: { id: user.Id, alias: user.Alias, email: user.Email }
-    // }));
-  } catch (error) {
-    console.error('Registration error:', error);
-    // fastify.log.error('Registration error:', error);
-    // socket.send(JSON.stringify({
-    //   type: 'RegisterResponse',
-    //   success: false,
-    //   error: 'Registration failed'
-    // }));
-  }
-}
-
-async function handleLogin(
-  socket: WebSocket,
-  payload: { Alias: string; Password: string },
-  prisma: PrismaClient,
-  fastify: FastifyInstance
-) {
-
-    fastify.log.info(`Logging in user: ${payload.Alias}`);
-    let user = await prisma.user.findFirst({
-      where: { 
-        AND: [
-          { Alias: payload.Alias },
-          { Password: payload.Password }
-        ]
-      }
-    });
-
-    if (user) {
-        console.log('User logged in:', user);
-      socket.send(JSON.stringify({
-        type: 'LoginResponse',
-        success: true,
-        user: { id: user.ID, alias: user.Alias, email: user.Email }
-      }));
-    } else {
-        console.log('Invalid login attempt for alias:', payload.Alias);
-      socket.send(JSON.stringify({
-        type: 'LoginResponse',
-        success: false,
-        error: 'Invalid alias or password'
-      }));
+    const userInfo = await response.json() as { email: string; name: string };
+    if (!userInfo.email || !userInfo.name) {
+      fastify.log.error(`Incomplete user info received:' ${JSON.stringify(userInfo)}`);
+      reply.status(500).send({ message: 'Incomplete user info received from OAuth provider' });
+      return;
     }
+    let user = await prisma.user.findFirst({
+      where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
+    });
+    
+    if (!user) {
+        user = await prisma.user.create({
+        data: {
+          Alias: userInfo.name,
+          Email: userInfo.email,
+          OauthLogin: true,
+          Online: true,
+          CreationDate: new Date(),
+        },
+      });
+      fastify.log.info(`Created new OAuth user: ${JSON.stringify(user)}`);
+    } else {
+      fastify.log.info(`Found existing OAuth user: ${JSON.stringify(user)}`);
+    }
+    reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
 }
+
+

@@ -1,24 +1,28 @@
-const ws = new WebSocket('ws://localhost:8080/ws');
+export let ws: WebSocket;
 
-ws.onopen = () => {
-  console.log('Connected');
-  // ws.send('Hello from client');
-  // Send a message to show connection
-  // ws.send('Client connected and ready!');
-};
+// Initialize WebSocket
+function initWebSocket() {
+  ws = new WebSocket('ws://localhost:8080/ws');
 
-ws.onmessage = (event) => {
-  console.log('Received:', event.data);
-};
+  ws.onopen = () => {
+    console.log('Connected');
+  };
 
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
+  ws.onmessage = (event) => {
+    console.log('Received:', event.data);
+  };
 
-ws.onclose = () => {
-  console.log('Disconnected from server');
-};
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
+  };
 
+  ws.onclose = () => {
+    console.log('Disconnected from server');
+  };
+}
+
+// Start WebSocket connection
+initWebSocket();
 
 // // Button event listener
 // const button = document.getElementById('myButton') as HTMLButtonElement;
@@ -60,10 +64,10 @@ loginButton.addEventListener('click', () => {
   ws.send(JSON.stringify(loginInfo));
 });
 
-import { loadGoogleIdentityServices, initGoogleOAuth } from './oauth/auth';
+import { oauthSignIn } from './oauth/auth';
 
   document.getElementById('oauthButton').addEventListener('click', () => {
     // Request access token when button clicked
     console.log('OAuth button clicked');
-    loadGoogleIdentityServices(initGoogleOAuth);
+    oauthSignIn();
   });

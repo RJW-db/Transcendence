@@ -1,10 +1,10 @@
-import Fastify, { FastifyInstance, FastifyRequest } from 'fastify';
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
 import websocket from '@fastify/websocket';
 import { WebSocket } from 'ws';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 
-import { messageHandlers } from './messageHandler';
+import { apimessageHandlers } from './messageHandler';
 
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
@@ -20,28 +20,28 @@ fastify.register(async function (fastify: FastifyInstance) {
       socket.on('message', (message: Buffer) => {
 
       
-        const data = JSON.parse(message.toString());
+        // const data = JSON.parse(message.toString());
         
-        // Handle different message types
-        // switch (data.type) {
-        //   case 'Register':
-        //     {
-        //       const userinfo : {Alias : string, Email : string, Password : string} = data.Payload;
-        //       console.log('Registering user:', userinfo.Email);
-        //       // handleRegister(socket, data.payload);
-        //       break;
-        //     }
-        //   default:
-        //     socket.send(JSON.stringify({ error: 'Unknown message type' }));
-        // }
+        // // Handle different message types
+        // // switch (data.type) {
+        // //   case 'Register':
+        // //     {
+        // //       const userinfo : {Alias : string, Email : string, Password : string} = data.Payload;
+        // //       console.log('Registering user:', userinfo.Email);
+        // //       // handleRegister(socket, data.payload);
+        // //       break;
+        // //     }
+        // //   default:
+        // //     socket.send(JSON.stringify({ error: 'Unknown message type' }));
+        // // }
 
-        const handler = messageHandlers[data.type];
-        if (data.type) {
-          handler(socket, data.Payload, prisma, fastify);
-        } else {
-          console.log('No handler for message type:', data.type);
-          // crash
-        }
+        // const handler = messageHandlers[data.type];
+        // if (data.type) {
+        //   handler(socket, data.Payload, prisma, fastify);
+        // } else {
+        //   console.log('No handler for message type:', data.type);
+        //   // crash
+        // }
 
 
       // Echo back the message received from the client
@@ -62,6 +62,46 @@ fastify.register(async function (fastify: FastifyInstance) {
   });
 });
 
+fastify.register(async function (fastify: FastifyInstance) {
+	fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
+		try{
+			//const	data = JSON.parse(request.body as string);
+			// connect to db and return the result
+
+			const	data = request.body as any;
+			if (data.type) {
+				const	apiHandler = apimessageHandlers[data.type];
+				apiHandler(data.Payload, prisma, fastify, reply);
+			}
+			
+		}catch{
+			console.log('faild to parse or no type !')
+			reply.status(401).send({message: `Bad request!`})
+		}
+		
+		
+
+	})
+});
+
+fastify.register(async function (fastify: FastifyInstance) {
+	fastify.get('/api', (request: FastifyRequest, reply: FastifyReply) => {
+		try{
+			//const	data = JSON.parse(request.body as string);
+			// connect to db and return the result
+
+			const	data = request.body as any;
+			if (data.type) {
+				const	apiHandler = apimessageHandlers[data.type];
+				apiHandler(data.Payload, prisma, fastify, reply);
+			}
+			
+		}catch{
+			console.log('faild to parse or no type !')
+			reply.status(401).send({message: `Bad request!`})
+		}
+	})
+});
 
 // Start the server
 const start = async () => {

@@ -17,17 +17,24 @@ db-rm:
 ngrok_install:
 	./setup_ngrok.sh
 
-ngrok: kill-ngrok
+ngrok:
 	@if [ ! -f .env ]; then \
 		echo "ERROR: .env file not found!"; \
 		exit 1; \
 	fi
-	@echo "Starting ngrok tunnel on port 8080..."
-	@./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 &
-	@sleep 2
-	@echo "ngrok started in background"
-	@echo "Check status: http://localhost:4040"
-	@make ngrok-url
+
+	@if pgrep -x ngrok > /dev/null; then \
+        echo "ngrok is already running"; \
+        echo "Current tunnel:"; \
+        make ngrok-url; \
+    else \
+        echo "Starting ngrok tunnel on port 8080..."; \
+        ./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 & \
+        sleep 2; \
+        echo "ngrok started in background"; \
+        echo "Check status: http://localhost:4040"; \
+        make ngrok-url; \
+    fi
 
 ngrok-url:
 	@curl -s http://localhost:4040/api/tunnels | grep -o '"public_url":"[^"]*' | grep -o 'https://[^"]*' || echo "ngrok not running"
