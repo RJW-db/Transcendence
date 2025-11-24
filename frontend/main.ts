@@ -1,28 +1,33 @@
 import io  from 'socket.io-client';
 
-function startWS(){
 
-	const socket = io ({
-		path: '/ws'
-	});
-
+const socket = io ({
+	path: '/ws'
+});
 
 
-	socket.on('connect', () => {
-		console.log('Connected to Socket.IO server!');
-		// Emit an event to the server
-		socket.emit('message', 'Hello from the client!');
-	});
-		socket.on('disconnect', () => {
-		console.log('Disconnected from Socket.IO server.');
-	});
 
-	socket.on('message', (msg) => {
-		console.log('Received message:', msg);
-		// You can update your UI here with the received message
-	});
+socket.on('connect', () => {
+	console.log('Connected to Socket.IO server!');
+	// Emit an event to the server
+	//socket.emit('message', 'Hello from the client!');
+});
+	socket.on('disconnect', () => {
+	console.log('Disconnected from Socket.IO server.');
+});
 
-};
+socket.on('message', (msg) => {
+	console.log('Received message in message :', msg);
+
+	// You can update your UI here with the received message
+});
+socket.on('game', (msg) => {
+	console.log('Received message in game:', msg);
+	
+	// You can update your UI here with the received message
+});
+
+
 
 
 
@@ -34,6 +39,7 @@ registerButton.addEventListener('click', () => {
   console.log('Register button clicked');
 
 	registerUser();
+	
 });
 
 // Login button event listener
@@ -47,8 +53,8 @@ loginButton.addEventListener('click', () => {
 const	upgrade = document.getElementById('upgradeConnectionButton') as HTMLButtonElement;
 upgrade.addEventListener('click', () => {
 	console.log('upgrade button clicked');
-	startWS();
-
+	socket.emit('message', 'Hello from the client!');
+	socket.emit('login', 1);
 });
 
 
@@ -92,7 +98,7 @@ async function loginUser() {
 			body: JSON.stringify({ 
 				type: 'Login',
 				Payload: {
-					Alias: 'Hulk Hogan',
+					Alias: '',
 					Password: 'testpass'
 				} 
 			}),

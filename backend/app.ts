@@ -1,29 +1,10 @@
 import Fastify, { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
 import { Server } from 'socket.io';
+import { Socket } from 'socket.io';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 import { apimessageHandlers, ApiMessageHandler } from './messageHandler';
-
-// interface RegisterPayload {
-//     Alias: string;
-//     Email: string;
-//     Password: string;
-// }
-
-// interface RequestBody {
-//     type: 'Register';
-//     Payload: RegisterPayload;
-// }
-
-// interface LoginPayload {
-//     Alias: string;
-//     Password: string;
-// }
-
-// interface LoginBody {
-//     type: 'Login';
-//     Payload: LoginPayload;
-// }
+const clients = new Map<number, Socket>();
 
 
 const fastify = Fastify({
@@ -44,19 +25,27 @@ cors: {
 },
 path: '/ws'
 });
+let dataid = 0;
+io.on('connection', (socket: Socket) => {
+	console.log(`Socket connected: ${socket.id}`);
+	io.emit('message','welcome from server ');
+	io.emit('game','game event!! ');
 
-io.on('connection', (socket) => {
-console.log(`Socket connected: ${socket.id}`);
-io.emit('message','welcome from server ');
-
-socket.on('message', (data: string) => {
-	console.log(`Message from ${socket.id}: ${data}`);
-	io.emit('message', `Server received: ${data}`); // Broadcast to all connected clients
-});
-
-socket.on('disconnect', () => {
-	console.log(`Socket disconnected: ${socket.id}`);
-});
+	socket.on('message', (data: string) => {
+		console.log(`Message from ${socket.id}: ${data}`);
+		io.emit('message', `Server received: ${data}`); // Broadcast to all connected clients
+	});
+	socket.on('login', (data: number) => {
+		clients.set(data + dataid, socket);
+		console.log(`Added userid ${data + dataid} with socketid ${socket.id}`);
+		clients.forEach((socketid, id) => {
+			console.log(`Current connected users:${id} && ${socketid.id}`);
+		})
+		dataid++;
+	});
+	socket.on('disconnect', () => {
+		console.log(`Socket disconnected: ${socket.id}`);
+	});
 });
 
 console.log('Socket.IO initialized');
