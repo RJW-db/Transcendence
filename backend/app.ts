@@ -4,11 +4,11 @@ import { Socket } from 'socket.io';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 import { apimessageHandlers, ApiMessageHandler } from './messageHandler';
-const clients = new Map<number, Socket>();
+const clients = new Map<Socket, number>();
 
 
 const fastify = Fastify({
-  logger: false // Enable logger for better development experience
+  logger: true // Enable logger for better development experience
 });
 
 
@@ -36,15 +36,19 @@ io.on('connection', (socket: Socket) => {
 		io.emit('message', `Server received: ${data}`); // Broadcast to all connected clients
 	});
 	socket.on('login', (data: number) => {
-		clients.set(data + dataid, socket);
+		clients.set( socket, data + dataid);
 		console.log(`Added userid ${data + dataid} with socketid ${socket.id}`);
-		clients.forEach((socketid, id) => {
+		clients.forEach((id, socketid) => {
 			console.log(`Current connected users:${id} && ${socketid.id}`);
 		})
 		dataid++;
 	});
 	socket.on('disconnect', () => {
 		console.log(`Socket disconnected: ${socket.id}`);
+		clients.delete(socket);
+		clients.forEach((id, socketid) => {
+			console.log(`Current connected users:${id} && ${socketid.id}`);
+		})
 	});
 });
 
