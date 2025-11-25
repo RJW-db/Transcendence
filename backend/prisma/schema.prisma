@@ -136,3 +136,10 @@ model TournamentUser {
   tournaments          Tournament[] @relation("TournamentParticipants")
   tournamentsAsWinner  Tournament[] @relation("TournamentWinner")
 }
+
+model Cookie {
+  cookieValue String @id 
+  UserID      Int    
+  user        User   @relation(fields: [UserID], references: [ID])
+
+}

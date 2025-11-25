@@ -139,4 +139,11 @@ CREATE TABLE User (
     CONSTRAINT Email UNIQUE (Email)
 );
 
+CREATE TABLE cookie(
+    CookieValue text NOT NULL CONSTRAINT Cookie_pk PRIMARY KEY,
+    UserID integer NOT NULL,
+    CONSTRAINT CookieValue FOREIGN KEY (UserID)
+    REFERENCES User (ID)
+);
+
 -- End of file.
