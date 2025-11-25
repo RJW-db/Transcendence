@@ -1,4 +1,4 @@
-import { ws } from '../main';
+// import { ws } from '../main';
 
 function oauthSignIn() {
   // Google's OAuth 2.0 endpoint for requesting an access token
@@ -97,9 +97,7 @@ async function handleOAuthCallback() {
 // Call this when the callback page loads - wrap in setTimeout to ensure ws is initialized
 if (window.location.pathname.includes('/callback/google')) {
   // Wait for both DOM and modules to load
-  setTimeout(() => {
     handleOAuthCallback();
-  }, 100);
 }
 
 export { oauthSignIn };

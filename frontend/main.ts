@@ -1,5 +1,8 @@
 export let ws: WebSocket;
 
+import { oauthSignIn } from "./login/auth";
+import { showRegisterPage } from "./login/registerLogic";
+
 // Initialize WebSocket
 function initWebSocket() {
   ws = new WebSocket('ws://localhost:8080/ws');
@@ -23,51 +26,34 @@ function initWebSocket() {
 
 // Start WebSocket connection
 initWebSocket();
+export const appRoot = document.getElementById('app') as HTMLElement;
 
-// // Button event listener
-// const button = document.getElementById('myButton') as HTMLButtonElement;
-// button.addEventListener('click', () => {
-//   console.log('Button clicked');
-//   const userInfo = {type: 'Register', Payload: {Alias: 'barbie', Email: 'testemail', Password: 'testpass' }};
-//   ws.send(JSON.stringify(userInfo));
-//   const oauthToken = {Token: "043542542343"};
-//   ws.send(JSON.stringify(oauthToken));
+showHomePage()
 
-// });
+export async function showHomePage() {
+  const res = await fetch('/html/homePage.html');
+  appRoot.innerHTML = await res.text();
+  console.log("loading homepage")
 
-// Register button event listener
-const registerButton = document.getElementById('registerButton') as HTMLButtonElement;
-registerButton.addEventListener('click', () => {
-  console.log('Register button clicked');
-  const userInfo = {
-    type: 'Register', 
-    Payload: {
-      Alias: 'Hulk Hogan', 
-      Email: 'testemail', 
-      Password: 'testpass' 
-    }
-  };
-  ws.send(JSON.stringify(userInfo));
-});
-
-// Login button event listener
-const loginButton = document.getElementById('loginButton') as HTMLButtonElement;
-loginButton.addEventListener('click', () => {
-  console.log('Login button clicked');
-  const loginInfo = {
-    type: 'Login',
-    Payload: {
-      Alias: 'Hulk Hogan',
-      Password: 'testpass'
-    }
-  };
-  ws.send(JSON.stringify(loginInfo));
-});
-
-import { oauthSignIn } from './oauth/auth';
-
-  document.getElementById('oauthButton').addEventListener('click', () => {
-    // Request access token when button clicked
-    console.log('OAuth button clicked');
-    oauthSignIn();
+  document.getElementById('registerButton')?.addEventListener('click', async () => {
+    console.log('Register button clicked');
+    await showRegisterPage();
   });
+
+  document.getElementById('loginButton')?.addEventListener('click', async () => {
+    console.log('Login button clicked');
+    await showLoginPage();
+  });
+
+  document.getElementById('oauthButton')?.addEventListener('click', async () => {
+    console.log('OAuth button clicked');
+    await oauthSignIn();
+  });
+}
+
+
+async function showLoginPage() {
+  const res = await fetch('/html/loginPage.html');
+  appRoot.innerHTML = await res.text();
+}
+
