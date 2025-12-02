@@ -28,6 +28,7 @@ model User {
   matchesAsWinner        Match[]       @relation("Winner")
   MessagesSent   Message[]     @relation("Sender")
   MessagesReceived Message[]   @relation("Receiver")
+  Cookies        Cookie[]
   TournamentUsers TournamentUser[]
 }
 
@@ -138,8 +139,7 @@ model TournamentUser {
 }
 
 model Cookie {
-  cookieValue String @id 
-  UserID      Int    
-  user        User   @relation(fields: [UserID], references: [ID])
-
+  CookieValue String @id
+  UserID      Int
+  User        User   @relation(fields: [UserID], references: [ID])
 }

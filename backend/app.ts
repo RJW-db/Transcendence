@@ -3,64 +3,45 @@ import websocket from '@fastify/websocket';
 import { WebSocket } from 'ws';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
+export const cookie = require('@fastify/cookie');
+import type { FastifyCookieOptions } from '@fastify/cookie'
+
 
 import { apimessageHandlers } from './messageHandler';
+import { json } from 'stream/consumers';
+import { getMessageHandlers } from './getMessageHandler';
 
-const fastify = Fastify({
+export const fastify = Fastify({
   logger: true // Enable logger for better development experience
 });
 
 // Register the WebSocket plugin
-fastify.register(websocket);
 
-// Define a WebSocket route
-fastify.register(async function (fastify: FastifyInstance) {
+// export fastiftCookieOptions
+export const fastifyCookieOptions: FastifyCookieOptions = {
+    secret: 'my-secret', // for cookies signature
+    parseOptions: {}     // options for parsing cookies
+  };
 
-  fastify.get('/ws', { websocket: true }, (socket : WebSocket, req : FastifyRequest) => {
-      socket.on('message', (message: Buffer) => {
+fastify.register(cookie, fastifyCookieOptions); 
 
-      
-        // const data = JSON.parse(message.toString());
-        
-        // // Handle different message types
-        // // switch (data.type) {
-        // //   case 'Register':
-        // //     {
-        // //       const userinfo : {Alias : string, Email : string, Password : string} = data.Payload;
-        // //       console.log('Registering user:', userinfo.Email);
-        // //       // handleRegister(socket, data.payload);
-        // //       break;
-        // //     }
-        // //   default:
-        // //     socket.send(JSON.stringify({ error: 'Unknown message type' }));
-        // // }
+// // Define a WebSocket route
+// fastify.register(async function (fastify: FastifyInstance) {
 
-        // const handler = messageHandlers[data.type];
-        // if (data.type) {
-        //   handler(socket, data.Payload, prisma, fastify);
-        // } else {
-        //   console.log('No handler for message type:', data.type);
-        //   // crash
-        // }
+//   fastify.get('/ws', { websocket: true }, (socket : WebSocket, req : FastifyRequest) => {
+//       socket.on('message', (message: Buffer) => {
+//       });
 
+//     socket.on('close', () => {
+//       fastify.log.info('WebSocket connection closed.');
+//     });
 
-      // Echo back the message received from the client
-      // socket.send(`Echo from server: ${message}`);
-      // fastify.log.info(`Received: ${message}`);
-      });
+//     socket.on('error', (error : Error) => {
+//       fastify.log.error('WebSocket error:');
+//     });
 
-    socket.on('close', () => {
-      fastify.log.info('WebSocket connection closed.');
-    });
-
-    socket.on('error', (error : Error) => {
-      fastify.log.error('WebSocket error:');
-    });
-
-    // Send a welcome message when a client connects
-    socket.send('Welcome to the Fastify WebSocket server!');
-  });
-});
+//   });
+// });
 
 fastify.register(async function (fastify: FastifyInstance) {
 	fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
@@ -71,11 +52,11 @@ fastify.register(async function (fastify: FastifyInstance) {
 			const	data = request.body as any;
 			if (data.type) {
 				const	apiHandler = apimessageHandlers[data.type];
-				apiHandler(data.Payload, prisma, fastify, reply);
+				apiHandler(data.Payload, request, prisma, fastify, reply);
 			}
 			
 		}catch{
-			console.log('faild to parse or no type !')
+			console.log('faild to parse or no type ! in post /api')
 			reply.status(401).send({message: `Bad request!`})
 		}
 		
@@ -89,15 +70,23 @@ fastify.register(async function (fastify: FastifyInstance) {
 		try{
 			//const	data = JSON.parse(request.body as string);
 			// connect to db and return the result
-
-			const	data = request.body as any;
-			if (data.type) {
-				const	apiHandler = apimessageHandlers[data.type];
-				apiHandler(data.Payload, prisma, fastify, reply);
-			}
+      const query = request.query as any;
+			// const	data = request.querySelector as any;
+      if (!query.type) {
+        throw new Error('No type specified in query parameters');
+      }
+      const	data = { type: query.type, Payload: {} };
+      const	apiHandler = getMessageHandlers[data.type];
+      apiHandler(request, prisma, fastify, reply);
+        
+			// if (data.type) {
+			// 	const	apiHandler = apimessageHandlers[data.type];
+			// 	apiHandler(data.Payload, prisma, fastify, reply);
+			// }
 			
-		}catch{
-			console.log('faild to parse or no type !')
+		}
+    catch{
+			console.log('faild to parse or no type ! in get /api')
 			reply.status(401).send({message: `Bad request!`})
 		}
 	})

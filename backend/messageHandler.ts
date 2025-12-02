@@ -1,13 +1,22 @@
 import { WebSocket } from 'ws';
 import { PrismaClient } from '@prisma/client';
-import { FastifyInstance, FastifyReply} from 'fastify';
-import { addListener } from 'process';
-import { userInfo } from 'os';
+import {FastifyRequest, FastifyInstance, FastifyReply} from 'fastify';
+// import { addListener } from 'process';
+// import { userInfo } from 'os';
+
+const { serialize, parse } = require('@fastify/cookie')
+
+import type { fastifyCookieOptions } from './app'
+import { fastify } from './app'
+
+
+
 // const prisma = new PrismaClient();
 
 
 export type ApiMessageHandler = (
   payload: any,
+  request: FastifyRequest,
   prisma: PrismaClient,
   fastify: FastifyInstance,
   reply: FastifyReply
@@ -15,11 +24,85 @@ export type ApiMessageHandler = (
 
 export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'oauthLogin': apiHandleOAuthLogin,
-  'registerUser': apiHandleRegister
+  'registerUser': apiHandleRegister,
+  'loginUser': apiHandleLogin,
+  'logoutUser': apiHandleLogout
 };
+
+async function apiHandleLogout(
+  payload: { },
+  request: FastifyRequest,
+  prisma: PrismaClient,
+  fastify: FastifyInstance,
+  reply: FastifyReply
+) {
+    const sessionId = request.cookies.sessionId;
+    if (!sessionId) {
+        fastify.log.error('No sessionId cookie found for logout');
+        reply.status(400).send({ message: 'failed to delete sessionId cookie' });
+        return;
+    }
+    // Delete the cookie from the database
+    const deletedCookie = await prisma.cookie.deleteMany({
+        where: { CookieValue: sessionId },
+    });
+    if (deletedCookie.count === 0) {
+        fastify.log.error(`No cookie found in DB for sessionId: ${sessionId}`);
+    } else {
+        fastify.log.info(`Deleted cookie from DB for sessionId: ${sessionId}`);
+    }
+    // Clear the cookie in the response
+    reply.clearCookie('sessionId');
+    fastify.log.info(`User logged out successfully for sessionId: ${sessionId}`);
+    reply.status(200).send({ message: 'Logout successful' });
+}
+
+async function apiHandleLogin(
+  payload: { Email: string; Password: string },
+  request: FastifyRequest,
+  prisma: PrismaClient,
+  fastify: FastifyInstance,
+  reply: FastifyReply
+) {
+    fastify.log.info(`Handling login for email: ${payload.Email}`);
+    const user = await prisma.user.findUnique({
+      where: { Email: payload.Email },
+    });
+    if (!user) {
+      fastify.log.error(`User not found for email: ${payload.Email}`);
+      reply.status(400).send({ message: 'Invalid email or !password' });
+      return;
+    }
+    // Here you would normally check the password hash
+    // For simplicity, we assume the password is stored in plain text (not recommended)
+    if (user.Password !== payload.Password) {
+      fastify.log.error(`Invalid password for email: ${payload.Email}`);
+      reply.status(400).send({ message: 'Invalid !email or password' });
+      return;
+    }
+    // Set a cookie or session here if needed
+    const sessionId : string = `session-${user.ID}-${Date.now()}`;
+    reply.setCookie('sessionId', sessionId, { httpOnly: true });
+    // reply.setCookie('sessionId', user.ID.toString(), { httpOnly: true });
+    const dbCookie = await prisma.cookie.create({
+      data: {
+        UserID: user.ID,
+        CookieValue: sessionId
+      },
+    });
+    if (!dbCookie) {
+      fastify.log.error(`Failed to create cookie for user ID: ${user.ID}`);
+      reply.status(500).send({ message: 'Failed to create session' });
+      return;
+    }
+    console.log('Created cookie in DB:', dbCookie);
+    fastify.log.info(`User logged in successfully: ${JSON.stringify(user)}`);
+    reply.status(200).send({ message: 'Login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
+}
 
 async function apiHandleRegister(
   payload: { Alias: string; Email: string; Password: string },
+  request: FastifyRequest,
 	prisma: PrismaClient,
 	fastify: FastifyInstance,
 	reply: FastifyReply
@@ -38,7 +121,8 @@ async function apiHandleRegister(
         data: {
           Alias: payload.Alias,
           Email: payload.Email,
-          OauthLogin: true,
+          Password: payload.Password,
+          OauthLogin: false,
           Online: true,
           CreationDate: new Date(),
         },
@@ -64,6 +148,7 @@ async function apiHandleRegister(
 }
 async function apiHandleOAuthLogin(
   payload: { Token: string },
+  request: FastifyRequest,
 	prisma: PrismaClient,
 	fastify: FastifyInstance,
 	reply: FastifyReply
@@ -104,6 +189,21 @@ async function apiHandleOAuthLogin(
     } else {
       fastify.log.info(`Found existing OAuth user: ${JSON.stringify(user)}`);
     }
+    const sessionId : string = `session-${user.ID}-${Date.now()}`;
+    reply.setCookie('sessionId', sessionId, { httpOnly: true });
+    // reply.setCookie('sessionId', user.ID.toString(), { httpOnly: true });
+    const dbCookie = await prisma.cookie.create({
+      data: {
+        UserID: user.ID,
+        CookieValue: sessionId
+      },
+    });
+    if (!dbCookie) {
+      fastify.log.error(`Failed to create cookie for user ID: ${user.ID}`);
+      reply.status(500).send({ message: 'Failed to create session' });
+      return;
+    }
+    console.log('Created cookie in DB:', dbCookie);
     reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
 }
 

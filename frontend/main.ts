@@ -2,30 +2,33 @@ export let ws: WebSocket;
 
 import { oauthSignIn } from "./login/auth";
 import { showRegisterPage } from "./login/registerLogic";
+import { showLoginPage } from "./login/loginLogic";
+import { showUserInfoPage } from "./login/userInfoPage";
+import { showLogoutPage } from "./login/logout";
 
-// Initialize WebSocket
-function initWebSocket() {
-  ws = new WebSocket('ws://localhost:8080/ws');
+// // Initialize WebSocket
+// function initWebSocket() {
+//   ws = new WebSocket('ws://localhost:8080/ws');
 
-  ws.onopen = () => {
-    console.log('Connected');
-  };
+//   ws.onopen = () => {
+//     console.log('Connected');
+//   };
 
-  ws.onmessage = (event) => {
-    console.log('Received:', event.data);
-  };
+//   ws.onmessage = (event) => {
+//     console.log('Received:', event.data);
+//   };
 
-  ws.onerror = (error) => {
-    console.error('WebSocket error:', error);
-  };
+//   ws.onerror = (error) => {
+//     console.error('WebSocket error:', error);
+//   };
 
-  ws.onclose = () => {
-    console.log('Disconnected from server');
-  };
-}
+//   ws.onclose = () => {
+//     console.log('Disconnected from server');
+//   };
+// }
 
 // Start WebSocket connection
-initWebSocket();
+// initWebSocket();
 export const appRoot = document.getElementById('app') as HTMLElement;
 
 showHomePage()
@@ -49,11 +52,15 @@ export async function showHomePage() {
     console.log('OAuth button clicked');
     await oauthSignIn();
   });
-}
 
+  document.getElementById('showUserInfoButton')?.addEventListener('click', async () => {
+    console.log('Show User Info button clicked');
+    await showUserInfoPage();
+  });
 
-async function showLoginPage() {
-  const res = await fetch('/html/loginPage.html');
-  appRoot.innerHTML = await res.text();
+  document.getElementById('logoutButton')?.addEventListener('click', async () => {
+    console.log('Logout button clicked');
+    await showLogoutPage();
+  });
 }
 

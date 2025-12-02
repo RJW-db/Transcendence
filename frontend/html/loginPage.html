@@ -5,14 +5,14 @@
     <title>Login</title>
   </head>
   <body>
-    <form>
+    <form method="post">
       <h1>Login</h1>
       <label>Username</label>
-      <input type="text" name="username">
+      <input type="text" name="email">
       <label>Password</label>
       <input type="password" name="password">
       <button type="submit">Sign In</button>
-    <script type="module" src="/login/loginlogic.ts"></script>
+      <p id="loginError" style="color: red;"></p>
     </form>
   </body>
 </html>
