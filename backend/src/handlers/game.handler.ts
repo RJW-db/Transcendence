@@ -4,6 +4,6 @@ import { Logger } from 'pino'; // Example Logger
 
 import { SocketContext } from '../types';
 
-export const gameHandler = ({ io, socket, db, logger }: SocketContext) => {
+export const gameHandler = ({ io, socket, db }: SocketContext) => {
 	
 }

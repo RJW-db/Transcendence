@@ -59,7 +59,7 @@ io.on('connection', (socket: Socket) => {
 		io,
 		socket,
 		db: prisma, // Assuming you decorated fastify with prisma
-		logger: fastify.log,
+		// logger: fastify.log,
 	};
 
 	dataid++;

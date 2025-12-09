@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client'; // Adjust if using a different DB
-import { Logger } from 'pino';                 // Adjust if using a different Logger
+// import { Logger } from 'pino';                 // Adjust if using a different Logger
 
 // ========================================================
 // 1. EVENT DEFINITIONS
@@ -54,5 +54,5 @@ export interface SocketContext {
   io: MyServer;
   socket: MySocket;
   db: PrismaClient; 
-  logger: Logger;
+  // logger: Logger;
 }

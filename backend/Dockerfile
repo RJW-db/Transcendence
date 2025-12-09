@@ -21,9 +21,10 @@ COPY prisma/config/pong_schema.sql ./prisma/config/
 RUN mkdir ./prisma/database
 RUN npx --yes prisma generate
 
-COPY app.ts  ./
-COPY messageHandler.ts ./
+# COPY app.ts  ./
+# COPY messageHandler.ts ./
 COPY tsconfig.json ./
+COPY ./src ./src
 
 # Build the TypeScript application
 RUN npm run build
