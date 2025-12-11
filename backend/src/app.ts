@@ -8,22 +8,7 @@ import { apimessageHandlers, ApiMessageHandler } from './handlers/messageHandler
 import { SocketContext, MyServer, MySocket } from './types';
 import { gameHandler } from './handlers/game.handler';
 import { serverHandler } from './handlers/server.handler';
-const clients = new Map<Socket, number>();
-
-const matchlist = new Map<ChildProcess, Match>();
-
-class Match{
-	socket1 : Socket;
-	socket2 : Socket;
-	uid1 : any;
-	uid2 : any;
-	constructor(socketP1: Socket, socketP2: Socket, uidP1 : number, uidP2 : number){
-		this.socket1 = socketP1;
-		this.socket2 = socketP2;
-		this.uid1 = uidP1;
-		this.uid2 = uidP2;
-	}
-}
+import { GameWorkerManager } from './engine/workerManager';
 
 
 const fastify = Fastify({
@@ -47,15 +32,22 @@ path: '/ws'
 let dataid = 0;
 //console.log("client .size is ", clients.size);
 
+const gameManager = new GameWorkerManager(io);
 
 io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
-	clients.set( socket, dataid);
-	if (!clients.has(socket)){
-		console.log("Failed to add client to map");
-	}
+	// clients.set( socket, dataid);
+	// if (!clients.has(socket)){
+	// 	console.log("Failed to add client to map");
+	// }
 	// io.emit('chatMessage','welcome from server ');
 	// io.emit('chatMessage','game event!! ');
+
+	socket.join('1');
+	if (io.sockets.adapter.rooms.get('1')?.size === 2) {
+		console.log("Start game");
+		gameManager.createGame('1');
+	}
 
 	const ctx: SocketContext = {
 		io,

@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client'; // Adjust if using a different DB
 export interface ServerToClientEvents {
   chatMessage: (msg: string) => void;
   notification: (msg: string) => void;
+  gameState: (msg: any) => void;
   // Add other events here
 }
 

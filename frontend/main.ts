@@ -213,6 +213,9 @@ socket.on('game', (msg) => {
 	// You can update your UI here with the received message
 });
 
+socket.on('gameState', (msg: any) => {
+	console.log('Received gamestate');
+})
 
 
 
