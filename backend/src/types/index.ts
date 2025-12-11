@@ -15,6 +15,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   joinRoom: (room: string) => void;
   sendMessage: (msg: string) => void;
+  gameEvent: (msg: string) => void;
   // Add other events here
 }
 
@@ -24,6 +25,7 @@ export interface InterServerEvents {
 
 export interface SocketData {
   userId: string;
+  cookie: string;
   // Add other data here
 }
 
@@ -53,6 +55,6 @@ export type MyServer = Server<
 export interface SocketContext {
   io: MyServer;
   socket: MySocket;
-  db: PrismaClient; 
+  // db: PrismaClient; 
   // logger: Logger;
 }

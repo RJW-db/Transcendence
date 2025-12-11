@@ -5,7 +5,9 @@ import { fork, ChildProcess } from 'child_process';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 import { apimessageHandlers, ApiMessageHandler } from './handlers/messageHandler';
-import { SocketContext, MyServer } from './types';
+import { SocketContext, MyServer, MySocket } from './types';
+import { gameHandler } from './handlers/game.handler';
+import { serverHandler } from './handlers/server.handler';
 const clients = new Map<Socket, number>();
 
 const matchlist = new Map<ChildProcess, Match>();
@@ -35,7 +37,7 @@ fastify.ready((error) => {
 });
 
 
-const io = new Server(fastify.server, {
+const io: MyServer = new Server(fastify.server, {
 cors: {
 	origin: "*", // Allow all origins for simplicity, adjust in production
 	methods: ["GET", "POST"]
@@ -46,23 +48,25 @@ let dataid = 0;
 //console.log("client .size is ", clients.size);
 
 
-io.on('connection', (socket: Socket) => {
+io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
 	clients.set( socket, dataid);
 	if (!clients.has(socket)){
 		console.log("Failed to add client to map");
 	}
-	io.emit('message','welcome from server ');
-	io.emit('game','game event!! ');
+	// io.emit('chatMessage','welcome from server ');
+	// io.emit('chatMessage','game event!! ');
 
 	const ctx: SocketContext = {
 		io,
 		socket,
-		db: prisma, // Assuming you decorated fastify with prisma
+		// db: prisma, // Assuming you decorated fastify with prisma
 		// logger: fastify.log,
 	};
-
 	dataid++;
+	socket.data.cookie = 'cookie';
+	gameHandler(ctx);
+	serverHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){

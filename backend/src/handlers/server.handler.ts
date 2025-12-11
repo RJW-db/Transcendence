@@ -4,10 +4,10 @@ import { Logger } from 'pino'; // Example Logger
 
 import { SocketContext } from '../types';
 
-export const gameHandler = ({ io, socket }: SocketContext) => {
+export const serverHandler = ({ io, socket }: SocketContext) => {
 	
-	socket.on('gameEvent', (msg: string) => {
-		console.log(`${msg}`);
-		console.log(`In gameHandler cookie test: ${socket.data.cookie}`);
+	socket.on('sendMessage', (msg: string) => {
+		console.log(`In serverHandler: ${msg}`);
+		// io.emit
 	})
 }

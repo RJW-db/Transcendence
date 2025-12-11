@@ -141,9 +141,11 @@ function	btnPressed(which: string, event: Event) {
 	{
 		case 'startPlay':
 			btn = 'startPlay';
+			socket.emit('sendMessage', 'Message from client');
 			break;
 		case 'pausePlay':
 			btn = 'pausePlay';
+			socket.emit('gameEvent', 'Message from client for cookie test')
 			break;
 		default :
 			console.log('unknown button pressed!');
