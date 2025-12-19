@@ -1,8 +1,8 @@
 import { appRoot, showHomePage} from "../main";
+import logoutPageHtml from '../html/logoutPage.html?raw';
 
 export async function showLogoutPage() {
-    const res = await fetch('/html/logoutPage.html');
-    appRoot.innerHTML = await res.text();
+    appRoot.innerHTML = logoutPageHtml;
     const logoutText = appRoot.querySelector('#logout-message');
 
     const response = await fetch('/api', {
@@ -25,5 +25,5 @@ export async function showLogoutPage() {
         logoutText && (logoutText.textContent = 'Logout successful. Redirecting to home page...');
     }
         await new Promise(resolve => setTimeout(resolve, 2000));
-    showHomePage();
+    window.location.hash = '';
 }

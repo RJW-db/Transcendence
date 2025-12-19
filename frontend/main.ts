@@ -1,5 +1,7 @@
 export let ws: WebSocket;
 
+import './html/style.css';
+import homePageHtml from './html/homePage.html?raw';
 import { oauthSignIn } from "./login/auth";
 import { showRegisterPage } from "./login/registerLogic";
 import { showLoginPage } from "./login/loginLogic";
@@ -29,23 +31,51 @@ import { showLogoutPage } from "./login/logout";
 
 // Start WebSocket connection
 // initWebSocket();
+
 export const appRoot = document.getElementById('app') as HTMLElement;
 
-showHomePage()
+// Hash-based navigation
+window.addEventListener('hashchange', handleHashChange);
+handleHashChange();
+
+function setHash(hash: string) {
+  if (window.location.hash !== hash) {
+    window.location.hash = hash;
+  } else {
+    handleHashChange();
+  }
+}
+
+async function handleHashChange() {
+  switch (window.location.hash) {
+    case '#login':
+      await showLoginPage();
+      break;
+    case '#register':
+      await showRegisterPage();
+      break;
+    case '#userinfo':
+      await showUserInfoPage();
+      break;
+    case '#logout':
+      await showLogoutPage();
+      break;
+    default:
+      await showHomePage();
+      break;
+  }
+}
 
 export async function showHomePage() {
-  const res = await fetch('/html/homePage.html');
-  appRoot.innerHTML = await res.text();
+  appRoot.innerHTML = homePageHtml;
   console.log("loading homepage")
 
   document.getElementById('registerButton')?.addEventListener('click', async () => {
-    console.log('Register button clicked');
-    await showRegisterPage();
+    setHash('#register');
   });
 
   document.getElementById('loginButton')?.addEventListener('click', async () => {
-    console.log('Login button clicked');
-    await showLoginPage();
+    setHash('#login');
   });
 
   document.getElementById('oauthButton')?.addEventListener('click', async () => {
@@ -54,13 +84,11 @@ export async function showHomePage() {
   });
 
   document.getElementById('showUserInfoButton')?.addEventListener('click', async () => {
-    console.log('Show User Info button clicked');
-    await showUserInfoPage();
+    setHash('#userinfo');
   });
 
   document.getElementById('logoutButton')?.addEventListener('click', async () => {
-    console.log('Logout button clicked');
-    await showLogoutPage();
+    setHash('#logout');
   });
 }
 

@@ -4,15 +4,18 @@
     <meta charset="utf-8">
     <title>Login</title>
   </head>
-  <body>
-    <form method="post">
-      <h1>Login</h1>
-      <label>Username</label>
-      <input type="text" name="email">
-      <label>Password</label>
-      <input type="password" name="password">
-      <button type="submit">Sign In</button>
-      <p id="loginError" style="color: red;"></p>
-    </form>
+  <body class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md mx-auto flex flex-col items-center">
+      <form method="post" class="flex flex-col gap-4">
+        <h1 class="italic text-2xl font-bold text-center mb-4">Login</h1>
+        <label class="font-semibold">Username</label>
+        <input type="text" name="email" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="username">
+        <label class="font-semibold">Password</label>
+        <input type="passwords" name="password" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="current-password">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition">Sign In</button>
+        <button type="loginWithGoogle" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition" > GoogleLogin</button>
+        <p id="loginError" class="text-red-500 text-center"></p>
+      </form>
+    </div>
   </body>
 </html>

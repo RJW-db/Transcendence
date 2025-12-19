@@ -1,8 +1,8 @@
 import { appRoot, showHomePage} from "../main";
+import showUserInfoHtml from '../html/showUserInfo.html?raw';
 
 export async function showUserInfoPage() {
-    const res = await fetch('/html/showUserInfo.html');
-    appRoot.innerHTML = await res.text();
+    appRoot.innerHTML = showUserInfoHtml;
     const userInfoDiv = appRoot.querySelector('#user-details');
 
     // Fetch user info from the server
@@ -34,5 +34,5 @@ export async function showUserInfoPage() {
     console.log('Fetched user info:', result);
     // userInfoDiv && (userInfoDiv.textContent = `Alias: ${user.Alias}, Email: ${user.Email}, Created At: ${new Date(user.CreationDate).toLocaleString()}`);
     await new Promise(resolve => setTimeout(resolve, 2000));
-    showHomePage();
+    window.location.hash = '';
     }

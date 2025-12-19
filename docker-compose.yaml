@@ -6,7 +6,8 @@ services:
       context: ./frontend
     working_dir: /app
     user: root
-    # volumes:
+    volumes:
+      - ./frontend/html:/app/html
       # - ./frontend:/app
       # - /app/node_modules
     ports:

@@ -1,8 +1,8 @@
 import { appRoot, showHomePage} from "../main";
+import registerPageHtml from '../html/registerPage.html?raw';
 
 export async function showRegisterPage() {
-  const res = await fetch('/html/registerPage.html');
-  appRoot.innerHTML = await res.text();
+  appRoot.innerHTML = registerPageHtml;
 
   const form = appRoot.querySelector('form');
   const errorBox = appRoot.querySelector('#registerError');
@@ -33,7 +33,7 @@ export async function showRegisterPage() {
     }
     else
       console.log('Register successful:', result.message);
-    showHomePage();
+    window.location.hash = '';
   }
   );
 } 

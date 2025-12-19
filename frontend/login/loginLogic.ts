@@ -1,8 +1,8 @@
 import { appRoot, showHomePage} from "../main";
+import loginPageHtml from '../html/loginPage.html?raw';
 
 export async function showLoginPage() {
-    const res = await fetch('/html/loginPage.html');
-    appRoot.innerHTML = await res.text();
+    appRoot.innerHTML = loginPageHtml;
 
     const form = appRoot.querySelector('form');
   const errorBox = appRoot.querySelector('#loginError');
@@ -32,7 +32,7 @@ export async function showLoginPage() {
     }
     else
       console.log('login successful:', result.message);
-    showHomePage();
+    window.location.hash = '';
     }
     );
 
