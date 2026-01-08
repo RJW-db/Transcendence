@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client'; // Adjust if using a different DB
+import { GameWorkerManager } from '../engine/workerManager';
 // import { Logger } from 'pino';                 // Adjust if using a different Logger
 
 // ========================================================
@@ -17,6 +18,7 @@ export interface ClientToServerEvents {
   joinRoom: (room: string) => void;
   sendMessage: (msg: string) => void;
   gameEvent: (msg: string) => void;
+  gameKey: (msg: string) => void;
   // Add other events here
 }
 
@@ -25,7 +27,7 @@ export interface InterServerEvents {
 }
 
 export interface SocketData {
-  userId: string;
+  userId: number;
   cookie: string;
   // Add other data here
 }
@@ -56,6 +58,7 @@ export type MyServer = Server<
 export interface SocketContext {
   io: MyServer;
   socket: MySocket;
+  gameManager: GameWorkerManager;
   // db: PrismaClient; 
   // logger: Logger;
 }

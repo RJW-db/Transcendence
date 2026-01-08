@@ -171,7 +171,7 @@ function	handleKeyPress(event: KeyboardEvent){
 
 	let direction = null;
 	let body = {};
-	//console.log(`event key target is ${event.key}`);
+	console.log(`event key target is ${event.key}`);
 	if (event.key === 'w' || event.key === 'o' || event.key === 'ArrowUp'){
 		direction = 'up';
 	}else if(event.key === 's' || event.key === 'l' || event.key === 'ArrowDown' ){
@@ -179,7 +179,7 @@ function	handleKeyPress(event: KeyboardEvent){
 	}
 	if (direction !== null){
 		body = {direction : direction};
-		socket.emit('gamekey', direction);
+		socket.emit('gameKey', direction);
 	}
 }
 
@@ -215,6 +215,7 @@ socket.on('game', (msg) => {
 
 socket.on('gameState', (msg: any) => {
 	console.log('Received gamestate');
+	renderGameState(msg);
 })
 
 
@@ -307,4 +308,45 @@ async function loginUser() {
 		console.error('Error during login:', error.message);
 		throw error; // Re-throw to be handled by the caller
 	}
+}
+
+function	movingBall(x : number, y : number){
+	console.log(`ball x is ${x} ball y is ${y}`);
+	const	ballPercentX = (x / 800 ) * 100;
+	const	ballPercentY = (y / 600) * 100;
+	const	ball = document.querySelector('#ball') as HTMLElement | null;
+	if (ball){
+		ball.style.left = `${ballPercentX}%`;
+		ball.style.top = `${ballPercentY}%`;
+	}
+	
+}
+
+
+function updatePaddlePosition(leftPX : number, leftPY : number, rightPX : number, rightPY: number) {
+	console.log(`left paddle pos is ${leftPY} right paddle pos is ${rightPY}`);
+	const	leftPaddle = document.querySelector('#left-paddle') as HTMLElement | null;
+	const	rightPaddle = document.querySelector('#right-paddle') as HTMLElement | null;
+
+
+
+
+
+
+	const	leftPaddlePercent = (leftPY / 600) * 100;
+	const	rightPaddlePercent = (rightPY / 600) * 100;
+	const	leftPaddleXPercent = (leftPX / 800) * 100;
+	const	rightPaddleXPercent = (rightPX / 800) * 100;
+	if (leftPaddle && rightPaddle){
+		leftPaddle.style.left = `${leftPaddleXPercent}%`;
+		leftPaddle.style.top = `${leftPaddlePercent}%`;
+		rightPaddle.style.left = `${rightPaddleXPercent}%`;
+		rightPaddle.style.top = `${rightPaddlePercent}%`;
+	}
+}
+
+function	renderGameState(gameState : any){
+	updatePaddlePosition(gameState.p1X, gameState.p1Y, gameState.p2X, gameState.p2Y);
+	movingBall(gameState.ball.x, gameState.ball.y);
+	// updateScore(gameState.score.p1, gameState.score.p2);
 }

@@ -29,13 +29,14 @@ cors: {
 },
 path: '/ws'
 });
-let dataid = 0;
+let dataid = 1;
 //console.log("client .size is ", clients.size);
 
 const gameManager = new GameWorkerManager(io);
 
 io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
+	socket.data.userId = dataid;
 	// clients.set( socket, dataid);
 	// if (!clients.has(socket)){
 	// 	console.log("Failed to add client to map");
@@ -44,19 +45,28 @@ io.on('connection', (socket: MySocket) => {
 	// io.emit('chatMessage','game event!! ');
 
 	socket.join('1');
-	if (io.sockets.adapter.rooms.get('1')?.size === 2) {
-		console.log("Start game");
-		gameManager.createGame('1');
-	}
+	// if (io.sockets.adapter.rooms.get('1')?.size === 2) {
+	// 	console.log("Start game");
+	// 	gameManager.createGame('1');
+	// }
+
+	// const sockets = io.in('1').fetchSockets();
+	// if (sockets.length == 2)
+	// {
+	// 	console.log("Start game");
+	// 	gameManager.createGame('1', sockets[0].data.userId, sockets[1].data.userId);
+	// }
 
 	const ctx: SocketContext = {
 		io,
 		socket,
+		gameManager
 		// db: prisma, // Assuming you decorated fastify with prisma
 		// logger: fastify.log,
 	};
-	dataid++;
+	// socket.data.userId = dataid;
 	socket.data.cookie = 'cookie';
+	dataid++;
 	gameHandler(ctx);
 	serverHandler(ctx);
 

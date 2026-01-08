@@ -10,6 +10,7 @@ export class GameWorkerManager {
 
 	const isTs = __filename.endsWith('.ts');
 	const workerFileName = isTs ? 'gameWorker.ts' : 'gameWorker.js';
+  console.log(`${workerFileName}`);
 	const workerPath = path.join(__dirname, '../engine', workerFileName);
 
     // Spin up ONE worker thread to handle ALL games
@@ -29,15 +30,15 @@ export class GameWorkerManager {
     });
   }
 
-  createGame(roomId: string) {
-    this.worker.postMessage({ type: 'CREATE_GAME', roomId });
+  createGame(roomId: string, p1: number, p2: number) {
+    this.worker.postMessage({ type: 'CREATE_GAME', roomId, p1, p2 });
   }
 
   destroyGame(roomId: string) {
     this.worker.postMessage({ type: 'DELETE_GAME', roomId });
   }
 
-  handleInput(roomId: string, player: 'p1' | 'p2', action: 'up' | 'down') {
+  handleInput(roomId: string, player: number, action: 'up' | 'down') {
     this.worker.postMessage({ type: 'INPUT', roomId, player, action });
   }
 }

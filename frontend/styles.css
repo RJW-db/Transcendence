@@ -140,14 +140,16 @@ h1 {
 
 .ball {
 	width: 2.5%;
-	padding-top: 2.5%;
-	height: 0;
+	/* padding-top: 0%; */
+	/* height: 2.5%; */
+	aspect-ratio: 1/1;
     border-radius: 50%;
     background-color: white;
     position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translateX(-50%);
+	transform: translate(-50%, -50%);
+	/* top: 50%; */
+	/* left: 50%; */
+	/* transform: translateX(-50%); */
 }
 
 
@@ -161,11 +163,11 @@ h1 {
 }
 #left-paddle {
 	left: 2%;
-	top: 50%;
+	/* top: 50%; */
 }
 #right-paddle {
 	right: 2%;
-	top: 50%;
+	/* top: 50%; */
 }
 
 

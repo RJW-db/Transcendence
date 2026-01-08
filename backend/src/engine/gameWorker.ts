@@ -27,7 +27,7 @@ if (parentPort) {
   parentPort.on('message', (msg: any) => {
     switch (msg.type) {
       case 'CREATE_GAME':
-        games.set(msg.roomId, new PongGame(msg.roomId));
+        games.set(msg.roomId, new PongGame(msg.roomId, msg.p1, msg.p2));
         break;
         
       case 'DELETE_GAME':
