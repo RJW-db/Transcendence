@@ -311,7 +311,7 @@ async function loginUser() {
 }
 
 function	movingBall(x : number, y : number){
-	console.log(`ball x is ${x} ball y is ${y}`);
+	// console.log(`ball x is ${x} ball y is ${y}`);
 	const	ballPercentX = (x / 800 ) * 100;
 	const	ballPercentY = (y / 600) * 100;
 	const	ball = document.querySelector('#ball') as HTMLElement | null;
@@ -324,7 +324,7 @@ function	movingBall(x : number, y : number){
 
 
 function updatePaddlePosition(leftPX : number, leftPY : number, rightPX : number, rightPY: number) {
-	console.log(`left paddle pos is ${leftPY} right paddle pos is ${rightPY}`);
+	// console.log(`left paddle pos is ${leftPY} right paddle pos is ${rightPY}`);
 	const	leftPaddle = document.querySelector('#left-paddle') as HTMLElement | null;
 	const	rightPaddle = document.querySelector('#right-paddle') as HTMLElement | null;
 
@@ -345,8 +345,18 @@ function updatePaddlePosition(leftPX : number, leftPY : number, rightPX : number
 	}
 }
 
+function	updateScore(scoreBoardLeft: number, scoreBoardRight : number){
+	const	leftScore = document.querySelector('#left-score') as HTMLElement | null;
+	const	rightScore = document.querySelector('#right-score') as HTMLElement | null;
+	if (leftScore && rightScore){
+		leftScore.textContent = scoreBoardLeft.toString();
+		rightScore.textContent = scoreBoardRight.toString();
+	}
+	
+}
+
 function	renderGameState(gameState : any){
 	updatePaddlePosition(gameState.p1X, gameState.p1Y, gameState.p2X, gameState.p2Y);
 	movingBall(gameState.ball.x, gameState.ball.y);
-	// updateScore(gameState.score.p1, gameState.score.p2);
+	updateScore(gameState.score.p1, gameState.score.p2);
 }
