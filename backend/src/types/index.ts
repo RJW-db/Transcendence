@@ -19,6 +19,7 @@ export interface ClientToServerEvents {
   sendMessage: (msg: string) => void;
   gameEvent: (msg: string) => void;
   gameKey: (msg: string) => void;
+  joinGame: (msg: string) => void;
   // Add other events here
 }
 
@@ -29,6 +30,7 @@ export interface InterServerEvents {
 export interface SocketData {
   userId: number;
   cookie: string;
+  matchID: string;
   // Add other data here
 }
 

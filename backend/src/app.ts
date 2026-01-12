@@ -44,7 +44,7 @@ io.on('connection', (socket: MySocket) => {
 	// io.emit('chatMessage','welcome from server ');
 	// io.emit('chatMessage','game event!! ');
 
-	socket.join('1');
+	socket.join(`${socket.data.userId}`);
 	// if (io.sockets.adapter.rooms.get('1')?.size === 2) {
 	// 	console.log("Start game");
 	// 	gameManager.createGame('1');

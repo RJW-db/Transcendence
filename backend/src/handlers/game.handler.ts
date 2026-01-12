@@ -9,16 +9,42 @@ export const gameHandler = ({ io, socket, gameManager }: SocketContext) => {
 	socket.on('gameEvent', async (msg: string) => {
 		console.log(`${msg}`);
 		// console.log(`In gameHandler cookie test: ${socket.data.cookie}`);
-	const sockets = await io.in('1').fetchSockets();
-	if (sockets.length == 2)
-	{
-		console.log("Start game");
-		gameManager.createGame('1', sockets[0].data.userId, sockets[1].data.userId);
-	}
 	})
 
 	socket.on('gameKey', (msg: any) => {
 		console.log(`Key pressed: ${msg}`);
-		gameManager.handleInput('1', socket.data.userId, msg);
+		gameManager.handleInput(socket.data.matchID, socket.data.userId, msg);
+	})
+
+	socket.on('joinGame', async (msg: string) => {
+		//Add users to waiting room
+		socket.join('waitRoom');
+
+		//Check if at least 2 people waiting
+		const sockets = await io.in('waitRoom').fetchSockets();
+		if (sockets.length === 2)
+		{
+			//Create Match entry in db
+			// const match = await ctx.db.match.create({
+			// 	data: {
+			// 		player1Id: socket.data.userId,
+			// 		player2Id: targetUserId,
+			// 		status: 'PENDING'
+			// 	}
+			// });
+
+			//Create room for match
+			// const matchID = `game:${match.id}`;
+			const matchID = `game:`;
+			sockets[0].join(matchID);
+			sockets[0].data.matchID = matchID;
+			sockets[1].join(matchID);
+			sockets[1].data.matchID = matchID;
+			io.in(matchID).socketsLeave('waitRoom');
+
+			//Start match
+			gameManager.createGame(matchID, sockets[0].data.userId, sockets[1].data.userId);
+		}
+
 	})
 }
