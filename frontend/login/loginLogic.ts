@@ -1,14 +1,27 @@
 import { appRoot, showHomePage} from "../main";
 import loginPageHtml from '../html/loginPage.html?raw';
+import { oauthSignIn } from "./auth";
 
-export async function showLoginPage() {
+
+export async function showLoginPage() :Promise<void> {
     appRoot.innerHTML = loginPageHtml;
 
     const form = appRoot.querySelector('form');
+    const googleBtn = appRoot.querySelector('#loginWithGoogle');
+
+
   const errorBox = appRoot.querySelector('#loginError');
+
+  googleBtn?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    oauthSignIn();
+  });
+
+
 
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log("wrong");
         const formData = new FormData(form);
         const response = await fetch('/api', {
             method: 'POST',
@@ -22,18 +35,26 @@ export async function showLoginPage() {
                     Password: formData.get('password')
                 }
             }),
-        });
-    const result = await response.json();
+        }
+      );
+      
 
-    if (!response.ok) { // Check if the request was successful (status code 2xx)
-      console.log('login failed:', result.message);
-      errorBox && (errorBox.textContent = result.message ?? 'Login failed.');
-      return;
-    }
-    else
-      console.log('login successful:', result.message);
     window.location.hash = '';
     }
     );
 
+}
+
+
+async function userLoggedIn(): Promise<boolean>
+{
+      const response = await fetch('/api?type=getUserInfo', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+    });
+    if (!response.ok)
+    {
+      return false;
+    }
+    return true;
 }

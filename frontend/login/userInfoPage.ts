@@ -14,9 +14,8 @@ export async function showUserInfoPage() {
     if (!response.ok) {
         console.log('Failed to fetch user info:', result.message);
         userInfoDiv && (userInfoDiv.textContent = result.message ?? 'Failed to fetch user info.');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // sleep 2 secs
         showHomePage();
-        
     }    
     const user = result.user;
     const fields: Record<string, string> = {
@@ -33,6 +32,6 @@ export async function showUserInfoPage() {
 
     console.log('Fetched user info:', result);
     // userInfoDiv && (userInfoDiv.textContent = `Alias: ${user.Alias}, Email: ${user.Email}, Created At: ${new Date(user.CreationDate).toLocaleString()}`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 2000)); // sleep 2 secs
     window.location.hash = '';
     }

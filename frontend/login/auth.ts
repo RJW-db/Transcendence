@@ -1,6 +1,6 @@
 // import { ws } from '../main';
 
-function oauthSignIn() {
+export function oauthSignIn() {
   // Google's OAuth 2.0 endpoint for requesting an access token
   var oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
 
@@ -29,8 +29,7 @@ function oauthSignIn() {
   const fullUrl = oauth2Endpoint + '?' + urlParams.toString();
   console.log('Full OAuth URL:', fullUrl);
   // Add form to page and submit it to open the OAuth 2.0 endpoint.
-  document.body.appendChild(form);
-  form.submit();
+  window.open(fullUrl);
 }
 
 
@@ -42,8 +41,6 @@ async function handleOAuthCallback() {
     return;
   }
 
-  // console.log(window.location.hash);
-  // // Parse the hash fragment (everything after #)
   const params = await new URLSearchParams(window.location.hash.substring(1));
 
   // Check for errors first
@@ -87,65 +84,16 @@ async function handleOAuthCallback() {
       return;
     }
     console.log('OAuth login successful:', await response.json());
-    window.history.replaceState({}, document.title, '/');
+    window.history.replaceState({}, document.title, '/#login');
   } else {
     console.error('No access token received');
     alert('Authentication failed: No token received');
     window.location.href = '/';
   }
+  window.close();
 }
 // Call this when the callback page loads - wrap in setTimeout to ensure ws is initialized
 if (window.location.pathname.includes('/callback/google')) {
   // Wait for both DOM and modules to load
     handleOAuthCallback();
 }
-
-export { oauthSignIn };
-// const clientId = '1017664873801-raklnn8mib38hhaqjar66bm45fonuov6.apps.googleusercontent.com';
-
-
-// function loadGoogleIdentityServices(callback) {
-//   const script = document.createElement('script');
-//   script.src = 'https://accounts.google.com/gsi/client';
-//   script.async = true;
-//   script.defer = true;
-//   script.onload = callback;
-//   document.head.appendChild(script);
-// }
-
-// function initGoogleOAuth() {
-//   const tokenClient = google.accounts.oauth2.initTokenClient({
-//     client_id: clientId,
-//     scope: 'profile email',
-//     callback: (tokenResponse) => {
-//       if (tokenResponse.access_token) {
-//         console.log('Access Token:', tokenResponse.access_token);
-//       }
-//     },
-//   });
-
-//   // Request token immediately after initialization
-//   tokenClient.requestAccessToken();
-// }
-
-// function handleOAuthCallback() {
-//   console.log(window.location.search);
-//     const urlParams = new URLSearchParams(window.location.search);
-
-//   const code = urlParams.get('code');
-
-//   if (code) {
-//     console.log('OAuth code received:', code);
-    
-//     // Send code to backend or process it
-//     // ... your code here ...
-
-//     // Clean up the URL - remove the query parameters
-//     window.history.replaceState({}, document.title, '/');
-//   }
-// }
-
-// // Call this when the page loads
-// handleOAuthCallback();
-
-// export { loadGoogleIdentityServices, initGoogleOAuth };
