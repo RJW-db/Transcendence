@@ -8,6 +8,7 @@ const { serialize, parse } = require('@fastify/cookie')
 
 import type { fastifyCookieOptions } from './app'
 import { fastify } from './app'
+import { parseBuildCommand } from 'typescript';
 
 
 
@@ -23,10 +24,13 @@ export type ApiMessageHandler = (
 ) => Promise<void> | void;
 
 export const apimessageHandlers: Record<string, ApiMessageHandler> = {
-  'oauthLogin': apiHandleOAuthLogin,
+  'oauthToken': handleOauthToken,
   'registerUser': apiHandleRegister,
   'loginUser': apiHandleLogin,
-  'logoutUser': apiHandleLogout
+  'logoutUser': apiHandleLogout,
+  'checkAccountExists': apiCheckAccountExists,
+  'oauthRegister': oauthRegister,
+  'oauthLogin': oauthLogin,
 };
 
 async function apiHandleLogout(
@@ -101,13 +105,13 @@ async function apiHandleLogin(
 }
 
 async function apiHandleRegister(
-  payload: { Alias: string; Email: string; Password: string },
+  payload: { Alias: string; Email: string; Password: string, Secret: string },
   request: FastifyRequest,
 	prisma: PrismaClient,
 	fastify: FastifyInstance,
 	reply: FastifyReply
 ) {
-    if (!payload.Alias || !payload.Email || !payload.Password) {
+    if (!payload.Alias || !payload.Email || !payload.Password || !payload.Secret) {
       fastify.log.error(`Incomplete user info received:' ${JSON.stringify(payload)}`);
       reply.status(500).send({ message: 'Incomplete user info received from OAuth provider' });
       return;
@@ -122,6 +126,7 @@ async function apiHandleRegister(
           Alias: payload.Alias,
           Email: payload.Email,
           Password: payload.Password,
+          Secret2FA : payload.Secret,
           OauthLogin: false,
           Online: true,
           CreationDate: new Date(),
@@ -146,7 +151,9 @@ async function apiHandleRegister(
 
 
 }
-async function apiHandleOAuthLogin(
+
+
+async function handleOauthToken(
   payload: { Token: string },
   request: FastifyRequest,
 	prisma: PrismaClient,
@@ -174,36 +181,163 @@ async function apiHandleOAuthLogin(
     let user = await prisma.user.findFirst({
       where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
     });
-    
-    if (!user) {
-        user = await prisma.user.create({
-        data: {
-          Alias: userInfo.name,
-          Email: userInfo.email,
-          OauthLogin: true,
-          Online: true,
-          CreationDate: new Date(),
-        },
-      });
-      fastify.log.info(`Created new OAuth user: ${JSON.stringify(user)}`);
-    } else {
-      fastify.log.info(`Found existing OAuth user: ${JSON.stringify(user)}`);
+    if (user) {
+      if (user.OauthLogin === false) {
+        fastify.log.error(`User exists but is not an OAuth user: ${JSON.stringify(user)}`);
+        reply.status(400).send({ message: 'User exists but is not an OAuth user' });
+        return;
+      }
+      reply.status(200).send({ secret2FA: user.Secret2FA, email : user.Email,} );
     }
-    const sessionId : string = `session-${user.ID}-${Date.now()}`;
-    reply.setCookie('sessionId', sessionId, { httpOnly: true });
-    // reply.setCookie('sessionId', user.ID.toString(), { httpOnly: true });
-    const dbCookie = await prisma.cookie.create({
-      data: {
-        UserID: user.ID,
-        CookieValue: sessionId
-      },
-    });
-    if (!dbCookie) {
-      fastify.log.error(`Failed to create cookie for user ID: ${user.ID}`);
-      reply.status(500).send({ message: 'Failed to create session' });
-      return;
-    }
-    console.log('Created cookie in DB:', dbCookie);
-    reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
+    else
+      reply.status(200).send({email: user.Email});
 }
 
+async function oauthRegister(
+  payload: { Token: string, Secret2FA: string },
+  request: FastifyRequest,
+  prisma: PrismaClient,
+  fastify: FastifyInstance,
+  reply: FastifyReply
+) {
+  fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+  fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+  const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: {
+      'Authorization': `Bearer ${payload.Token}`
+    }
+  });
+  if (!response.ok) {
+    fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
+    reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
+    return;
+  }
+  const userInfo = await response.json() as { email: string; name: string };
+  if (!userInfo.email || !userInfo.name) {
+    fastify.log.error(`Incomplete user info received:' ${JSON.stringify(userInfo)}`);
+    reply.status(500).send({ message: 'Incomplete user info received from OAuth provider' });
+    return;
+  }
+  let user = await prisma.user.findFirst({
+    where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
+  });
+  if (user) {
+    reply.status(400).send({ message: 'User already exists' });
+    return;
+  }
+
+  user = await prisma.user.create({
+    data: {
+      Alias: userInfo.name,
+      Email: userInfo.email,
+      Secret2FA : payload.Secret2FA,
+      OauthLogin: true,
+      Online: true,
+      CreationDate: new Date(),
+    },
+  });
+  fastify.log.info(`Created new OAuth user: ${JSON.stringify(user)}`);
+  const sessionId: string = `session-${user.ID}-${Date.now()}`;
+  reply.setCookie('sessionId', sessionId, { httpOnly: true });
+  // reply.setCookie('sessionId', user.ID.toString(), { httpOnly: true });
+  const dbCookie = await prisma.cookie.create({
+    data: {
+      UserID: user.ID,
+      CookieValue: sessionId
+    },
+  });
+  if (!dbCookie) {
+    fastify.log.error(`Failed to create cookie for user ID: ${user.ID}`);
+    reply.status(500).send({ message: 'Failed to create session' });
+    return;
+  }
+  console.log('Created cookie in DB:', dbCookie);
+  reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
+}
+
+
+async function oauthLogin(
+  payload: { Token: string},
+  request: FastifyRequest,
+  prisma: PrismaClient,
+  fastify: FastifyInstance,
+  reply: FastifyReply
+) {
+  fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+  fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+  const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: {
+      'Authorization': `Bearer ${payload.Token}`
+    }
+  });
+  if (!response.ok) {
+    fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
+    reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
+    return;
+  }
+  const userInfo = await response.json() as { email: string; name: string };
+  if (!userInfo.email || !userInfo.name) {
+    fastify.log.error(`Incomplete user info received:' ${JSON.stringify(userInfo)}`);
+    reply.status(500).send({ message: 'Incomplete user info received from OAuth provider' });
+    return;
+  }
+  let user = await prisma.user.findFirst({
+    where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
+  });
+  if (user) {
+    reply.status(400).send({ message: 'User already exists' });
+    return;
+  }
+
+  user = await prisma.user.create({
+    data: {
+      Alias: userInfo.name,
+      Email: userInfo.email,
+      Secret2FA : payload.Secret2FA,
+      OauthLogin: true,
+      Online: true,
+      CreationDate: new Date(),
+    },
+  });
+  fastify.log.info(`Created new OAuth user: ${JSON.stringify(user)}`);
+  const sessionId: string = `session-${user.ID}-${Date.now()}`;
+  reply.setCookie('sessionId', sessionId, { httpOnly: true });
+  // reply.setCookie('sessionId', user.ID.toString(), { httpOnly: true });
+  const dbCookie = await prisma.cookie.create({
+    data: {
+      UserID: user.ID,
+      CookieValue: sessionId
+    },
+  });
+  if (!dbCookie) {
+    fastify.log.error(`Failed to create cookie for user ID: ${user.ID}`);
+    reply.status(500).send({ message: 'Failed to create session' });
+    return;
+  }
+  console.log('Created cookie in DB:', dbCookie);
+  reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
+}
+
+async function apiCheckAccountExists(
+    payload: { Alias: string; Email: string},
+  request: FastifyRequest,
+	prisma: PrismaClient,
+	fastify: FastifyInstance,
+	reply: FastifyReply
+)
+{
+        let user = await prisma.user.findFirst({
+      where: { OR: [{ Email: payload.Email }, { Alias: payload.Alias }] }
+    });
+    if (user){
+      let message = '';
+      if (user.Email == payload.Email && user.Alias == payload.Alias)
+        message = "user with email: " + payload.Email + " and alias: " + payload.Alias + " already exists";
+      else if (user.Email == payload.Email)
+        message = "user with email: " + payload.Email + " already exists";
+      else
+        message = "user with alias: " + payload.Alias + " already exists";
+      reply.status(400).send({ message: message });
+    }
+    reply.status(200).send({ message: "No accounts with email: " + payload.Email + " or alias: " + payload.Alias + " exist" });
+}

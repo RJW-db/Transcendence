@@ -1,0 +1,10 @@
+check if register worked and give proper error message
+
+remove email section 2fa
+
+create secret in backend
+
+complete totp check in backend and change how register works
+
+
+

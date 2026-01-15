@@ -57,7 +57,7 @@
     }
   </style>
 </head>
-<body>
+<body class="dark:bg-black dark:text-white">
   <h1>Two-Factor Authentication Setup</h1>
   
   <div class="section">
@@ -81,6 +81,11 @@
     <input type="text" id="token-input" placeholder="123456" maxlength="6" />
     <button id="verify-btn">Verify Token</button>
     <div id="verify-message"></div>
+  </div>
+
+  <div id="registeredMessage" class="section hidden">
+    <h2>2FA Setup Complete</h2>
+    <p>You have successfully register your account.</p>
   </div>
 
   <script type="module" src="/src/login/TOTP-app.ts"></script>

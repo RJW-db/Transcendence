@@ -1,8 +1,12 @@
 import { setupTwoFactorAuth, verifyToken } from './TOTP';
+import totpHtml from '../../html/TOTP.html?raw'
+import { appRoot } from '../../main';
+import { registerUser } from '../../login/registerLogic';
+
 
 let currentSecret: string = '';
 
-function validateEmail(email: string): boolean {
+export function validateEmail(email: string): boolean {
   // console.log("valid email");
   if (!email || email.length > 254) return false;
   
@@ -20,82 +24,17 @@ function validateEmail(email: string): boolean {
   return simpleRegex.test(email);
 }
 
-document.getElementById('setup-btn')?.addEventListener('click', async () => {
+export async function totpSetup(username: string, oauth : boolean) : Promise<string> {
+  appRoot.innerHTML = await totpHtml;
   console.log('Button clicked');
-  const usernameInput = document.getElementById('username-input') as HTMLInputElement;
-  const username = usernameInput.value.trim();
-
-  if (!validateEmail(username)) {
-    alert('Please enter a valid email address');
-    return;
-  }
+  // const usernameInput = document.getElementById('username-input') as HTMLInputElement;
+  // const username = usernameInput.value.trim();
 
   try {
     const { secret, qrCodeImage } = await setupTwoFactorAuth(username);
     currentSecret = secret;
     console.log('Setup complete, secret generated');
-    
-    const qrCodeDiv = document.getElementById('qr-code');
-    if (qrCodeDiv) {
-      qrCodeDiv.innerHTML = `
-        <p><strong>Scan this QR code:</strong></p>
-        <img src="${qrCodeImage}" alt="QR Code" />
-      `;
-      qrCodeDiv.classList.remove('hidden');
-    }
-    
-    const secretText = document.getElementById('secret-text');
-    if (secretText) {
-      secretText.textContent = secret;
-    }
-    
-    document.getElementById('secret-display')?.classList.remove('hidden');
-    document.getElementById('verify-section')?.classList.remove('hidden');
-  } catch (err) {
-    console.error('Error during setup:', err);
-    alert('Error generating QR code. Check console.');
-  }
-});
-
-document.getElementById('verify-btn')?.addEventListener('click', async () => {
-  const tokenInput = document.getElementById('token-input') as HTMLInputElement;
-  const token = tokenInput.value.trim();
-  const messageDiv = document.getElementById('verify-message');
-  
-  if (!token || token.length !== 6) {
-    if (messageDiv) {
-      messageDiv.innerHTML = '<div class="message error">Please enter a 6-digit code</div>';
-    }
-    return;
-  }
-
-  const isValid = await verifyToken(token, currentSecret);
-  console.log('Verification result:', isValid);
-
-  if (messageDiv) {
-    if (isValid) {
-      messageDiv.innerHTML = '<div class="message success">✓ Token is valid!</div>';
-    } else {
-      messageDiv.innerHTML = '<div class="message error">✗ Invalid token</div>';
-    }
-  }
-});
-
-export async function totpSetup() {
-  console.log('Button clicked');
-  const usernameInput = document.getElementById('username-input') as HTMLInputElement;
-  const username = usernameInput.value.trim();
-
-  if (!validateEmail(username)) {
-    alert('Please enter a valid email address');
-    return;
-  }
-
-  try {
-    const { secret, qrCodeImage } = await setupTwoFactorAuth(username);
-    currentSecret = secret;
-    console.log('Setup complete, secret generated');
-
+    console.log("Secret:", secret);
     const qrCodeDiv = document.getElementById('qr-code');
     if (qrCodeDiv) {
       qrCodeDiv.innerHTML = `
@@ -112,13 +51,32 @@ export async function totpSetup() {
 
     document.getElementById('secret-display')?.classList.remove('hidden');
     document.getElementById('verify-section')?.classList.remove('hidden');
+    
+
+    document.getElementById('verify-btn')?.addEventListener('click', async () => {
+  console.log("verify button clicked")
+    if (await totpVerify())
+      if (oauth)
+        console.log("oauth");
+      else
+      registerUser(currentSecret);
+    else
+      console.log("failed verifying")
+      }
+    );
+
+    return secret;
   } catch (err) {
     console.error('Error during setup:', err);
     alert('Error generating QR code. Check console.');
+    return '';
   }
+
 }
 
-export async function totpVerify() {
+
+
+export async function totpVerify() : Promise<boolean> {
   const tokenInput = document.getElementById('token-input') as HTMLInputElement;
   const token = tokenInput.value.trim();
   const messageDiv = document.getElementById('verify-message');
@@ -127,7 +85,6 @@ export async function totpVerify() {
     if (messageDiv) {
       messageDiv.innerHTML = '<div class="message error">Please enter a 6-digit code</div>';
     }
-    return;
   }
 
   const isValid = await verifyToken(token, currentSecret);
@@ -136,8 +93,13 @@ export async function totpVerify() {
   if (messageDiv) {
     if (isValid) {
       messageDiv.innerHTML = '<div class="message success">✓ Token is valid!</div>';
+      document.getElementById('registeredMessage')?.classList.remove('hidden');
     } else {
       messageDiv.innerHTML = '<div class="message error">✗ Invalid token</div>';
     }
   }
+  if (isValid)
+    return true;
+  else
+    return false;
 }

@@ -129,6 +129,7 @@ CREATE TABLE User (
     ID integer NOT NULL CONSTRAINT User_pk PRIMARY KEY AUTOINCREMENT,
     Alias text NOT NULL,
     Email text NOT NULL,
+    Secret2FA text NOT NULL,
     Password text,
     OauthLogin boolean NOT NULL DEFAULT 0,
     Online boolean NOT NULL,

@@ -1,5 +1,7 @@
 // import { ws } from '../main';
 
+import { totpSetup } from "../src/authentication/TOTP-app";
+
 export function oauthSignIn() {
   // Google's OAuth 2.0 endpoint for requesting an access token
   var oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -32,6 +34,7 @@ export function oauthSignIn() {
   window.open(fullUrl);
 }
 
+let accessToken = "";
 
 async function handleOAuthCallback() {
   // Check if we're on the callback page
@@ -55,7 +58,7 @@ async function handleOAuthCallback() {
   }
 
   // Extract token and other parameters
-  const accessToken = await params.get('access_token');
+  accessToken = await params.get('access_token') as string;
   const tokenType = params.get('token_type');
   const expiresIn = params.get('expires_in');
   const scope = params.get('scope');
@@ -72,7 +75,7 @@ async function handleOAuthCallback() {
 			'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({ 
-				type: 'oauthLogin',
+				type: 'oauthToken',
 				Payload: {
 					Token: accessToken
 				} 
@@ -80,11 +83,18 @@ async function handleOAuthCallback() {
     	});
     if (!response.ok) { // Check if the request was successful (status code 2xx)
       alert('Authentication failed: ' + response.statusText);
-      window.location.href = '/';
+      window.location.hash = '#login';
       return;
     }
-    console.log('OAuth login successful:', await response.json());
-    window.history.replaceState({}, document.title, '/#login');
+    const result = await response.json();
+    if (result.secret2FA)
+    {
+      console.log("2fa login");
+    }
+    else
+      totpSetup(result.email, true);
+      
+
   } else {
     console.error('No access token received');
     alert('Authentication failed: No token received');
@@ -92,8 +102,32 @@ async function handleOAuthCallback() {
   }
   window.close();
 }
+
+export async function createOauthUser(secret: string)
+{
+  const response = await fetch('/api', {
+			method: 'POST',
+			headers: {
+			'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ 
+				type: 'oauthRegister',
+				Payload: {
+					Token: accessToken,
+          Secret2FA : secret
+				} 
+			}),
+    	});
+    if (!response.ok) { // Check if the request was successful (status code 2xx)
+      alert('Authentication failed: ' + response.statusText);
+      window.location.hash = '#login';
+      return;
+    }
+}
+
 // Call this when the callback page loads - wrap in setTimeout to ensure ws is initialized
 if (window.location.pathname.includes('/callback/google')) {
   // Wait for both DOM and modules to load
     handleOAuthCallback();
 }
+

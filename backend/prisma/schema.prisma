@@ -11,6 +11,7 @@ model User {
   ID             Int      @id @default(autoincrement())
   Alias          String   @unique
   Email          String   @unique
+  Secret2FA      String
   Password       String?
   OauthLogin     Boolean @default(false)
   Online         Boolean @default(true)
