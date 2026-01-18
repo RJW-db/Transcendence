@@ -50,6 +50,7 @@ fastify.register(async function (fastify: FastifyInstance) {
 			// connect to db and return the result
 
 			const	data = request.body as any;
+      // console.log("API request received with type:", data.type);
 			if (data.type) {
 				const	apiHandler = apimessageHandlers[data.type];
 				apiHandler(data.Payload, request, prisma, fastify, reply);

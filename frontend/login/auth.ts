@@ -29,7 +29,6 @@ export function oauthSignIn() {
   // Build and print the full OAuth URL for debugging
   const urlParams = new URLSearchParams(params);
   const fullUrl = oauth2Endpoint + '?' + urlParams.toString();
-  console.log('Full OAuth URL:', fullUrl);
   // Add form to page and submit it to open the OAuth 2.0 endpoint.
   window.open(fullUrl);
 }
@@ -89,18 +88,20 @@ async function handleOAuthCallback() {
     const result = await response.json();
     if (result.secret2FA)
     {
-      console.log("2fa login");
+      const secret = result.secret2FA;
+      console.log("got secret from server:", secret);
+      await totpSetup(result.email, true, secret);
     }
-    else
-      totpSetup(result.email, true);
-      
-
   } else {
+    if (result.oauthAccount) {
+      console.log('OAuth account exists, proceeding to app');
+      
+    }
     console.error('No access token received');
     alert('Authentication failed: No token received');
     window.location.href = '/';
   }
-  window.close();
+  // window.close();
 }
 
 export async function createOauthUser(secret: string)
@@ -123,6 +124,9 @@ export async function createOauthUser(secret: string)
       window.location.hash = '#login';
       return;
     }
+    else
+      console.log("OAuth user created successfully");
+
 }
 
 // Call this when the callback page loads - wrap in setTimeout to ensure ws is initialized

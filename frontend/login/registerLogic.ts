@@ -5,7 +5,7 @@ import { verifyToken } from "../src/authentication/TOTP";
 import { error } from "node:console";
 
   let Alias = '';
-  let email = '';
+  let Email = '';
   let Password = '';
 
 export async function showRegisterPage() {
@@ -26,8 +26,8 @@ export async function showRegisterPage() {
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const data = new FormData(form as HTMLFormElement);
-    email = data.get('email') as string;
-    if (!validateEmail(email)) {
+    Email = data.get('email') as string;
+    if (!validateEmail(Email)) {
       alert('Please enter a valid email address');
       return;
     }
@@ -43,24 +43,25 @@ export async function showRegisterPage() {
         type: 'checkAccountExists',
         Payload: {
           Alias: Alias,
-          Email: email,
+          Email: Email,
         }
       }),
     });
     const result = await response.json();
-        if (!response.ok) { // Check if the request was successful (status code 2xx)
+    if (!response.ok) { // Check if the request was successful (status code 2xx)
       console.log('Register failed:', result.message);
       errorBox!.textContent = `Error: ${result.message}`;
       return;
     }
-    else
-      console.log('Register successful:', result.message);
-    const secret = await totpSetup(email, false);
+    await totpSetup(Email, false, result.secret);
+
+    // const secret = await totpSetup(Email, false);
   }
   );
 } 
 
-export async function registerUser(secret :string ) {
+export async function registerUser(secret: string, token: string ) {
+  console.log("sending token for verification:", token);  
     const response = await fetch('/api', {
       method: 'POST',
       headers: {
@@ -70,17 +71,24 @@ export async function registerUser(secret :string ) {
         type: 'registerUser',
         Payload: {
           Alias: Alias,
-          Email: email,
+          Email: Email,
           Password: Password,
-          Secret: secret
+          Secret: secret,
+          VerifyToken: token
         }
       }),
     });
+    const result = await response.json();
+    if (!response.ok) {
+      console.log("error registering")
+      const errorBox = document.getElementById('verifyError');
+      console.log("writing error");
+      errorBox!.textContent = `Error: ${result.message}`;
+      console.log("error registering:", result.message);
+      return ;
+    }
+    else
+      alert("user account created")
     await new Promise(resolve => setTimeout(resolve, 2000));
     window.location.hash = '';
 }
-
-document.getElementById('verify-btn')?.addEventListener('click', async () => {
-  console.log("verify button clicked")
-      }
-    );

@@ -20,7 +20,7 @@ RUN mkdir ./prisma/database
 RUN npx --yes prisma generate
 
 COPY app.ts  ./
-COPY messageHandler.ts getMessageHandler.ts ./
+COPY messageHandler.ts getMessageHandler.ts TOTP.ts oauth.ts ./
 COPY tsconfig.json ./
 
 # Build the TypeScript application

@@ -1,7 +1,10 @@
-import { setupTwoFactorAuth, verifyToken } from './TOTP';
+import { generateQRCodeImage, verifyToken } from './TOTP';
 import totpHtml from '../../html/TOTP.html?raw'
+import registerTokenHtml from '../../html/RegisterToken.html?raw'
+
 import { appRoot } from '../../main';
 import { registerUser } from '../../login/registerLogic';
+import { createOauthUser } from '../../login/auth';
 
 
 let currentSecret: string = '';
@@ -24,14 +27,13 @@ export function validateEmail(email: string): boolean {
   return simpleRegex.test(email);
 }
 
-export async function totpSetup(username: string, oauth : boolean) : Promise<string> {
-  appRoot.innerHTML = await totpHtml;
-  console.log('Button clicked');
+export async function totpSetup(username: string, oauth: boolean, secret: string): Promise<string> {
+  appRoot.innerHTML = await registerTokenHtml;
   // const usernameInput = document.getElementById('username-input') as HTMLInputElement;
   // const username = usernameInput.value.trim();
 
   try {
-    const { secret, qrCodeImage } = await setupTwoFactorAuth(username);
+    const qrCodeImage = await generateQRCodeImage(username, secret);
     currentSecret = secret;
     console.log('Setup complete, secret generated');
     console.log("Secret:", secret);
@@ -41,7 +43,6 @@ export async function totpSetup(username: string, oauth : boolean) : Promise<str
         <p><strong>Scan this QR code:</strong></p>
         <img src="${qrCodeImage}" alt="QR Code" />
       `;
-      qrCodeDiv.classList.remove('hidden');
     }
 
     const secretText = document.getElementById('secret-text');
@@ -49,20 +50,18 @@ export async function totpSetup(username: string, oauth : boolean) : Promise<str
       secretText.textContent = secret;
     }
 
-    document.getElementById('secret-display')?.classList.remove('hidden');
-    document.getElementById('verify-section')?.classList.remove('hidden');
-    
 
-    document.getElementById('verify-btn')?.addEventListener('click', async () => {
-  console.log("verify button clicked")
-    if (await totpVerify())
+    document.getElementById('verify-btn')?.addEventListener('click', async(event) => {
+      event.preventDefault();
+      const tokenInput = document.getElementById('token-input') as HTMLInputElement;
+
+      const token = tokenInput.value.trim();
+      console.log("verify button clicked")
       if (oauth)
-        console.log("oauth");
+        createOauthUser(currentSecret);
       else
-      registerUser(currentSecret);
-    else
-      console.log("failed verifying")
-      }
+        await registerUser(currentSecret, token);
+    }
     );
 
     return secret;
@@ -75,31 +74,31 @@ export async function totpSetup(username: string, oauth : boolean) : Promise<str
 }
 
 
-
-export async function totpVerify() : Promise<boolean> {
-  const tokenInput = document.getElementById('token-input') as HTMLInputElement;
-  const token = tokenInput.value.trim();
-  const messageDiv = document.getElementById('verify-message');
+// export async function totpVerify() : Promise<boolean> {
+//   const tokenInput = document.getElementById('token-input') as HTMLInputElement;
+//   const token = tokenInput.value.trim();
+//   const messageDiv = document.getElementById('verify-message');
   
-  if (!token || token.length !== 6) {
-    if (messageDiv) {
-      messageDiv.innerHTML = '<div class="message error">Please enter a 6-digit code</div>';
-    }
-  }
+//   if (!token || token.length !== 6) {
+//     if (messageDiv) {
+//       messageDiv.innerHTML = '<div class="message error">Please enter a 6-digit code</div>';
+//       return false;
+//     }
+//   }
 
-  const isValid = await verifyToken(token, currentSecret);
-  console.log('Verification result:', isValid);
+//   const isValid = await verifyToken(token, currentSecret);
+//   console.log('Verification result:', isValid);
 
-  if (messageDiv) {
-    if (isValid) {
-      messageDiv.innerHTML = '<div class="message success">✓ Token is valid!</div>';
-      document.getElementById('registeredMessage')?.classList.remove('hidden');
-    } else {
-      messageDiv.innerHTML = '<div class="message error">✗ Invalid token</div>';
-    }
-  }
-  if (isValid)
-    return true;
-  else
-    return false;
-}
+//   if (messageDiv) {
+//     if (isValid) {
+//       messageDiv.innerHTML = '<div class="message success">✓ Token is valid!</div>';
+//       // document.getElementById('registeredMessage')?.classList.remove('hidden');
+//     } else {
+//       messageDiv.innerHTML = '<div class="message error">✗ Invalid token</div>';
+//     }
+//   }
+//   if (isValid)
+//     return true;
+//   else
+//     return false;
+// }

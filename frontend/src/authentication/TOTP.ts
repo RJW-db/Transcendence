@@ -3,19 +3,19 @@ import QRCode from 'qrcode';
 
 console.log('qrcode', QRCode);
 
-// Browser-compatible secret generation
-function generateSecret(): string {
-  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 charset
-  const secretLength = 32;
-  let secret = '';
-  const randomValues = new Uint8Array(secretLength);
-  crypto.getRandomValues(randomValues);
+// // Browser-compatible secret generation
+// function generateSecret(): string {
+//   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 charset
+//   const secretLength = 32;
+//   let secret = '';
+//   const randomValues = new Uint8Array(secretLength);
+//   crypto.getRandomValues(randomValues);
   
-  for (let i = 0; i < secretLength; i++) {
-    secret += charset[randomValues[i] % charset.length];
-  }
-  return secret;
-}
+//   for (let i = 0; i < secretLength; i++) {
+//     secret += charset[randomValues[i] % charset.length];
+//   }
+//   return secret;
+// }
 
 function generateQRCodeURL(username: string, secret: string): string {
   const serviceName = 'Transcendence';
@@ -107,20 +107,20 @@ interface TwoFactorAuthResult {
   qrCodeImage: string;
 }
 
-async function setupTwoFactorAuth(username: string): Promise<TwoFactorAuthResult> {
-  const secret = generateSecret();
-  const qrCodeImage = await generateQRCodeImage(username, secret);
+// async function setupTwoFactorAuth(username: string): Promise<TwoFactorAuthResult> {
+//   const secret = generateSecret();
+//   const qrCodeImage = await generateQRCodeImage(username, secret);
 
-  console.log('Secret:', secret);
-  console.log('QR Code generated');
+//   console.log('Secret:', secret);
+//   console.log('QR Code generated');
 
-  return { secret, qrCodeImage };
-}
+//   return { secret, qrCodeImage };
+// }
 
 export {
-  generateSecret,
+  // generateSecret,
   generateQRCodeURL,
   generateQRCodeImage,
   verifyToken,
-  setupTwoFactorAuth
+  // setupTwoFactorAuth
 };
