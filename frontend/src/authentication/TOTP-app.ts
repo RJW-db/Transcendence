@@ -58,7 +58,7 @@ export async function totpSetup(username: string, oauth: boolean, secret: string
       const token = tokenInput.value.trim();
       console.log("verify button clicked")
       if (oauth)
-        createOauthUser(currentSecret);
+        createOauthUser(currentSecret, token);
       else
         await registerUser(currentSecret, token);
     }

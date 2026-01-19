@@ -1,5 +1,8 @@
 // import { ws } from '../main';
 
+import { authtoken } from 'ngrok';
+import oauthverifyPageHtml from '../html/oauthVerifyPage.html?raw';
+import { appRoot } from '../main';
 import { totpSetup } from "../src/authentication/TOTP-app";
 
 export function oauthSignIn() {
@@ -67,36 +70,67 @@ async function handleOAuthCallback() {
     console.log('Token Type:', tokenType);
     console.log('Expires In:', expiresIn, 'seconds');
     console.log('Scope:', scope);
-    
-      const response = await fetch('/api', {
-			method: 'POST',
-			headers: {
-			'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ 
-				type: 'oauthToken',
-				Payload: {
-					Token: accessToken
-				} 
-			}),
-    	});
+
+    const response = await fetch('/api', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'oauthToken',
+        Payload: {
+          Token: accessToken
+        }
+      }),
+    });
     if (!response.ok) { // Check if the request was successful (status code 2xx)
       alert('Authentication failed: ' + response.statusText);
       window.location.hash = '#login';
       return;
     }
     const result = await response.json();
-    if (result.secret2FA)
-    {
+    if (result.secret2FA) {
       const secret = result.secret2FA;
       console.log("got secret from server:", secret);
       await totpSetup(result.email, true, secret);
     }
-  } else {
-    if (result.oauthAccount) {
-      console.log('OAuth account exists, proceeding to app');
-      
+    else {
+      if (result.oauthAccount) {
+        console.log('OAuth account exists, proceeding to app');
+        appRoot.innerHTML = oauthverifyPageHtml;
+        const form = appRoot.querySelector('form');
+        form?.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+          const token = formData.get('token') as string;
+          console.log("login token submitted:", token);
+          const response = await fetch('/api', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'oauthLogin',
+              Payload: {
+                Token: accessToken,
+                loginToken: token
+              }
+            }),
+          });
+          const result = await response.json();
+          if (response.ok) {
+            window.close();
+          }
+          if (!response.ok) {
+              const errorBox = appRoot.querySelector('#verifyError');
+              errorBox!.textContent = `Error: ${result.message}`;
+            }
+        }
+        );
+      }
     }
+  }
+  else {
     console.error('No access token received');
     alert('Authentication failed: No token received');
     window.location.href = '/';
@@ -104,7 +138,7 @@ async function handleOAuthCallback() {
   // window.close();
 }
 
-export async function createOauthUser(secret: string)
+export async function createOauthUser(secret: string, loginToken? : string)
 {
   const response = await fetch('/api', {
 			method: 'POST',
@@ -115,13 +149,16 @@ export async function createOauthUser(secret: string)
 				type: 'oauthRegister',
 				Payload: {
 					Token: accessToken,
-          Secret2FA : secret
+          Secret2FA : secret,
+          loginToken : loginToken
 				} 
 			}),
     	});
-    if (!response.ok) { // Check if the request was successful (status code 2xx)
-      alert('Authentication failed: ' + response.statusText);
-      window.location.hash = '#login';
+    const result = await response.json();
+    if (!response.ok) {
+      console.log('OAuth Register failed:', result.message);
+      const errorBox = appRoot.querySelector('#registerError');
+      errorBox!.textContent = `Error: ${result.message}`;
       return;
     }
     else

@@ -21,7 +21,6 @@ export async function showLoginPage() :Promise<void> {
 
     form?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log("wrong");
         const formData = new FormData(form);
         const response = await fetch('/api', {
             method: 'POST',
@@ -32,11 +31,20 @@ export async function showLoginPage() :Promise<void> {
                 type: 'loginUser',
                 Payload: {
                     Email: formData.get('email'),
-                    Password: formData.get('password')
+                    Password: formData.get('password'),
+                    Token2fa: formData.get('2faToken')
                 }
             }),
         }
+
       );
+      const result = await response.json();
+      if (!response.ok) {
+        console.log('login failed:', result.message);
+        errorBox!.textContent = `Error: ${result.message}`;
+        return ;
+      }
+      
       
 
     window.location.hash = '';

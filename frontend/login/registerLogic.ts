@@ -54,8 +54,6 @@ export async function showRegisterPage() {
       return;
     }
     await totpSetup(Email, false, result.secret);
-
-    // const secret = await totpSetup(Email, false);
   }
   );
 } 
@@ -81,14 +79,13 @@ export async function registerUser(secret: string, token: string ) {
     const result = await response.json();
     if (!response.ok) {
       console.log("error registering")
-      const errorBox = document.getElementById('verifyError');
-      console.log("writing error");
+      const errorBox = document.getElementById('registerError');
       errorBox!.textContent = `Error: ${result.message}`;
       console.log("error registering:", result.message);
       return ;
     }
     else
-      alert("user account created")
+      alert("user account created");
     await new Promise(resolve => setTimeout(resolve, 2000));
     window.location.hash = '';
 }

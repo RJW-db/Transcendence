@@ -1,16 +1,10 @@
-implement secret code generator backend
-request secret code using email
-after verifying on backend register user
+implement login 2fa
 
-check if register worked and give proper error message
-
-remove email section 2fa
-
-create secret in backend
+split up functions in backend and frontend
 
 
+implement password hashing
 
-complete totp check in backend and change how register works
+implement proper storing of login state in browser
 
-
-
+implement guest account

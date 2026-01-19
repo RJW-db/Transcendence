@@ -16,6 +16,7 @@ export async function showUserInfoPage() {
         userInfoDiv && (userInfoDiv.textContent = result.message ?? 'Failed to fetch user info.');
         await new Promise(resolve => setTimeout(resolve, 2000)); // sleep 2 secs
         showHomePage();
+        return ;
     }    
     const user = result.user;
     const fields: Record<string, string> = {

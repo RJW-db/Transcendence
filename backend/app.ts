@@ -19,7 +19,7 @@ export const fastify = Fastify({
 
 // export fastiftCookieOptions
 export const fastifyCookieOptions: FastifyCookieOptions = {
-    secret: 'my-secret', // for cookies signature
+    secret: process.env.COOKIE_SECRET || 'super-secret-dev-key-change-this', // for cookies signature
     parseOptions: {}     // options for parsing cookies
   };
 
