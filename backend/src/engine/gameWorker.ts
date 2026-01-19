@@ -28,6 +28,8 @@ if (parentPort) {
     switch (msg.type) {
       case 'CREATE_GAME':
         games.set(msg.roomId, new PongGame(msg.roomId, msg.p1, msg.p2));
+        const gamestart = games.get(msg.roomId);
+        if (gamestart) gamestart.init();
         break;
         
       case 'DELETE_GAME':
