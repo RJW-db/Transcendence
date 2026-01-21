@@ -40,11 +40,13 @@ export const handleOauthToken: ApiMessageHandler = async (
         return;
       }
       reply.status(200).send({oauthAccount: true} );
+      return ;
     }
     else {
         const secret = generateSecret();
         fastify.log.info(`created secret for: ${userInfo.email} secret: ${secret}`);
         reply.status(200).send({email: userInfo.email, secret2FA : secret});
+        return ;
     }
 }
 

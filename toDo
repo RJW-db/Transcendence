@@ -1,10 +1,9 @@
-implement login 2fa
-
-split up functions in backend and frontend
-
+implement guest account
 
 implement password hashing
 
 implement proper storing of login state in browser
 
-implement guest account
+
+
+split up functions in backend and frontend

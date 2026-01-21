@@ -4,141 +4,137 @@ import { authtoken } from 'ngrok';
 import oauthverifyPageHtml from '../html/oauthVerifyPage.html?raw';
 import { appRoot } from '../main';
 import { totpSetup } from "../src/authentication/TOTP-app";
+import {client_id, redirect_uri} from './.env';
+
 
 export function oauthSignIn() {
   // Google's OAuth 2.0 endpoint for requesting an access token
   var oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
-
-  // Create <form> element to submit parameters to OAuth 2.0 endpoint.
-  var form = document.createElement('form');
-  form.setAttribute('method', 'GET'); // Send as a GET request.
-  form.setAttribute('action', oauth2Endpoint);
-
   // Parameters to pass to OAuth 2.0 endpoint.
-  var params = {client_id: '1017664873801-raklnn8mib38hhaqjar66bm45fonuov6.apps.googleusercontent.com',
-                redirect_uri: 'https://nondeprecatory-hyperexcursively-laverna.ngrok-free.dev/callback/google',
+  var params = {client_id: client_id,
+                redirect_uri: redirect_uri,
                 response_type: 'token',
                 scope: 'openid email profile'};
 
-  // Add form parameters as hidden input values.
-  for (var p in params) {
-    var input = document.createElement('input');
-    input.setAttribute('type', 'hidden');
-    input.setAttribute('name', p);
-    input.setAttribute('value', params[p]);
-    form.appendChild(input);
-  }
-  // Print everything in the form for debugging
-  // Build and print the full OAuth URL for debugging
   const urlParams = new URLSearchParams(params);
+  console.log("URL Params:", urlParams.toString());
   const fullUrl = oauth2Endpoint + '?' + urlParams.toString();
+  console.log("Opening OAuth URL:", fullUrl);
   // Add form to page and submit it to open the OAuth 2.0 endpoint.
   window.open(fullUrl);
+  window.location.hash = '#'
 }
 
 let accessToken = "";
 
 async function handleOAuthCallback() {
   // Check if we're on the callback page
-  if (!window.location.pathname.includes('/callback/google')) {
-    console.error('not on OAuth callback page: ', window.location.pathname);
-    window.history.replaceState({}, document.title, '/callback/google');
-    return;
-  }
-
   const params = await new URLSearchParams(window.location.hash.substring(1));
 
-  // Check for errors first
-  const error = params.get('error');
-  if (error) {
-    const errorDescription = params.get('error_description');
-    console.error('OAuth Error:', error);
-    console.error('Error Description:', errorDescription);    
-    // Redirect back to login or home
-    window.location.href = '/';
+  if (await checkErrorResponse(params)) {
     return;
   }
 
   // Extract token and other parameters
   accessToken = await params.get('access_token') as string;
-  const tokenType = params.get('token_type');
-  const expiresIn = params.get('expires_in');
-  const scope = params.get('scope');
+  if (!accessToken) {
+    console.error('No access token found in URL parameters');
+    alert('Authentication failed: No token received');
+    window.location.href = '#login';
+    return;
+  }
 
-  if (accessToken) {
-    console.log('Access Token:', accessToken);
-    console.log('Token Type:', tokenType);
-    console.log('Expires In:', expiresIn, 'seconds');
-    console.log('Scope:', scope);
+  const response = await sendOauthAccountExistCheck();
+  if (!response.ok) { // Check if the request was successful (status code 2xx)
+    alert('Authentication failed: ' + response.statusText);
+    window.location.hash = '#login';
+    return;
+  }
+  const result = await response.json();
+  if (result.oauthAccount === true) {
+    await oauthLogin();
+  }
+  else if (result.secret2FA) {
+    const secret = result.secret2FA;
+    console.log("got secret from server:", secret);
+    await totpSetup(result.email, true, secret);
+  }
+  // window.close();
+}
 
-    const response = await fetch('/api', {
+async function checkErrorResponse(params: URLSearchParams): Promise<boolean> {
+    // Check for errors first
+  const error = params.get('error');
+  if (error) {
+    const errorDescription = params.get('error_description');
+    console.error('OAuth Error:', error);
+    console.error('Error Description:', errorDescription);
+    alert(`Authentication failed: ${errorDescription || error}`);
+    // Redirect back to login or home
+    window.location.href = '/';
+    return true;
+  }
+  return false;
+}
+
+
+async function sendOauthAccountExistCheck(): Promise<Response> {
+  const response = await fetch('/api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'oauthToken',
+      Payload: {
+        Token: accessToken
+      }
+    }),
+  });
+  return response;
+}
+
+async function oauthLogin() {
+  appRoot.innerHTML = oauthverifyPageHtml;
+  const form = appRoot.querySelector('form');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const token = formData.get('token') as string;
+    const response = await sendLoginRequest(token);
+    const result = await response.json();
+    if (response.ok) {
+      // window.close();
+      window.location.href = '/';
+      return;
+    }
+    if (!response.ok) {
+      const errorBox = appRoot.querySelector('#verifyError');
+      errorBox!.textContent = `Error: ${result.message}`;
+    }
+  }
+  );
+}
+
+async function sendLoginRequest(token2fa: string): Promise<Response> {
+const response = await fetch('/api', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        type: 'oauthToken',
+        type: 'oauthLogin',
         Payload: {
-          Token: accessToken
+          Token: accessToken,
+          loginToken: token2fa
         }
       }),
     });
-    if (!response.ok) { // Check if the request was successful (status code 2xx)
-      alert('Authentication failed: ' + response.statusText);
-      window.location.hash = '#login';
-      return;
-    }
-    const result = await response.json();
-    if (result.secret2FA) {
-      const secret = result.secret2FA;
-      console.log("got secret from server:", secret);
-      await totpSetup(result.email, true, secret);
-    }
-    else {
-      if (result.oauthAccount) {
-        console.log('OAuth account exists, proceeding to app');
-        appRoot.innerHTML = oauthverifyPageHtml;
-        const form = appRoot.querySelector('form');
-        form?.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          const formData = new FormData(form);
-          const token = formData.get('token') as string;
-          console.log("login token submitted:", token);
-          const response = await fetch('/api', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              type: 'oauthLogin',
-              Payload: {
-                Token: accessToken,
-                loginToken: token
-              }
-            }),
-          });
-          const result = await response.json();
-          if (response.ok) {
-            window.close();
-          }
-          if (!response.ok) {
-              const errorBox = appRoot.querySelector('#verifyError');
-              errorBox!.textContent = `Error: ${result.message}`;
-            }
-        }
-        );
-      }
-    }
-  }
-  else {
-    console.error('No access token received');
-    alert('Authentication failed: No token received');
-    window.location.href = '/';
-  }
-  // window.close();
+    return response;
 }
 
-export async function createOauthUser(secret: string, loginToken? : string)
+export async function createOauthUser(secret: string, loginToken: string)
 {
   const response = await fetch('/api', {
 			method: 'POST',

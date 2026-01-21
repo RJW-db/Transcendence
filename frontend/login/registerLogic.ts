@@ -1,8 +1,9 @@
 import { appRoot, showHomePage} from "../main";
 import registerPageHtml from '../html/registerPage.html?raw';
-import { totpSetup, totpVerify, validateEmail } from "../src/authentication/TOTP-app";
+import { totpSetup, validateEmail } from "../src/authentication/TOTP-app";
 import { verifyToken } from "../src/authentication/TOTP";
 import { error } from "node:console";
+import { read } from "node:fs";
 
   let Alias = '';
   let Email = '';
@@ -10,57 +11,71 @@ import { error } from "node:console";
 
 export async function showRegisterPage() {
   appRoot.innerHTML = registerPageHtml;
+    const form = appRoot.querySelector('form');
+    const errorBox = appRoot.querySelector('#registerError');
 
 
-
-  // document.getElementById('setup-btn')?.addEventListener('click', async () => {
-  //   totpSetup();
-  // });
-
-  // document.getElementById('verify-btn')?.addEventListener('click', async () => {
-  //   totpVerify();
-  // });
-
-  const form = appRoot.querySelector('form');
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const data = new FormData(form as HTMLFormElement);
-    Email = data.get('email') as string;
+
+    readRegisterForm(form);
     if (!validateEmail(Email)) {
-      alert('Please enter a valid email address');
+      errorBox!.textContent = 'Please enter a valid email address';
       return;
     }
-    Alias = data.get("alias") as string;
-    Password = data.get('password') as string;
-    const errorBox = appRoot.querySelector('#registerError');
-    const response = await fetch('/api', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'checkAccountExists',
-        Payload: {
-          Alias: Alias,
-          Email: Email,
-        }
-      }),
-    });
+    const response = await sendAccountExistCheck();
     const result = await response.json();
     if (!response.ok) { // Check if the request was successful (status code 2xx)
       console.log('Register failed:', result.message);
-      errorBox!.textContent = `Error: ${result.message}`;
+      errorBox!.textContent = `Cannot register: ${result.message}`;
       return;
     }
     await totpSetup(Email, false, result.secret);
   }
   );
+}
+
+function readRegisterForm(form: HTMLFormElement) {
+    const data = new FormData(form as HTMLFormElement);
+    Email = data.get('email') as string;
+    Alias = data.get("alias") as string;
+    Password = data.get('password') as string;
 } 
 
+async function sendAccountExistCheck():Promise < Response > {
+  const response = await fetch('/api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'checkAccountExists',
+      Payload: {
+        Alias: Alias,
+        Email: Email,
+      }
+    }),
+  });
+  return response;
+}
 export async function registerUser(secret: string, token: string ) {
-  console.log("sending token for verification:", token);  
-    const response = await fetch('/api', {
+    const response = await sendRegisterRequest(secret, token );
+    const result = await response.json();
+    if (!response.ok) {
+      const errorBox = document.getElementById('registerError');
+      errorBox!.textContent = `Error: ${result.message}`;
+      console.log("error registering:", result.message);
+      return ;
+    }
+    else
+      alert("user account created");
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    window.location.hash = '';
+}
+
+async function sendRegisterRequest(secret: string, token: string ):Promise < Response > {
+const response = await fetch('/api', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,16 +91,5 @@ export async function registerUser(secret: string, token: string ) {
         }
       }),
     });
-    const result = await response.json();
-    if (!response.ok) {
-      console.log("error registering")
-      const errorBox = document.getElementById('registerError');
-      errorBox!.textContent = `Error: ${result.message}`;
-      console.log("error registering:", result.message);
-      return ;
-    }
-    else
-      alert("user account created");
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    window.location.hash = '';
+    return response;
 }
