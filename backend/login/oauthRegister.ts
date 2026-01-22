@@ -1,9 +1,6 @@
-import { WebSocket } from 'ws';
-import { PrismaClient } from '@prisma/client';
-import {FastifyRequest, FastifyInstance, FastifyReply} from 'fastify';
-import {verifyToken, generateSecret, generateCookie} from './TOTP'
 import type { ApiMessageHandler } from './messageHandler';
-
+import {verifyToken, generateSecret} from './TOTP'
+import { getGoogleUserInfo, generateCookie} from './accountUtils';
 
 export const handleOauthToken: ApiMessageHandler = async (
   payload: { Token: string },
@@ -50,7 +47,6 @@ export const handleOauthToken: ApiMessageHandler = async (
     }
 }
 
-
 export const oauthRegister: ApiMessageHandler = async (  
     payload: { Token: string, Secret2FA: string },
   request,
@@ -84,50 +80,4 @@ export const oauthRegister: ApiMessageHandler = async (
       return;
   fastify.log.info(`User logged in successfully: ${JSON.stringify(user)}`);
   reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
-}
-
-export const oauthLogin: ApiMessageHandler = async (
-  payload: { Token: string, loginToken: string },
-  request,
-  prisma,
-  fastify,
-  reply
-
-) => {
-  const userInfo: { email: string; name: string } | null = await getGoogleUserInfo(payload.Token, fastify, reply);
-  if (!userInfo) {
-    return;
-  }
-  const user = await prisma.user.findFirst({
-    where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
-  });
-  if (!user) {
-    reply.status(400).send({ message: 'No such OAuth user' });
-    return;
-  }
-  fastify.log.info(`Verifying 2FA token for OAuth login: ${payload.loginToken}, user secret: ${user.Secret2FA}`);
-  if (!(await verifyToken(payload.loginToken, user.Secret2FA))) {
-    fastify.log.error(`Invalid 2FA token for OAuth registration`);
-    reply.status(400).send({ message: 'Invalid 2FA token' });
-    return;
-  }
-  const dbCookie = await generateCookie(user.ID, prisma, reply, fastify);
-  fastify.log.info(`User logged in successfully: ${JSON.stringify(user)}`);
-  reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
-}
-
-async function getGoogleUserInfo(token: string, fastify: FastifyInstance, reply: FastifyReply): Promise<{ email: string; name: string } | null> {
-      fastify.log.info(`Handling OAuth token: ${token}`);
-    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    if (!response.ok) {
-        fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
-        reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
-        return null;
-    }
-    const userInfo = await response.json() as { email: string; name: string };
-    return userInfo;
 }

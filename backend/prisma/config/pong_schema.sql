@@ -132,6 +132,7 @@ CREATE TABLE User (
     Secret2FA text NOT NULL,
     Password text,
     OauthLogin boolean NOT NULL DEFAULT 0,
+    GuestLogin boolean NOT NULL DEFAULT 0,
     Online boolean NOT NULL,
     CreationDate datetime NOT NULL,
     GamesWon integer NOT NULL DEFAULT 0,

@@ -1,6 +1,6 @@
+
 implement guest account
 
-implement password hashing
 
 implement proper storing of login state in browser
 

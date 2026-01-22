@@ -7,7 +7,7 @@ export const cookie = require('@fastify/cookie');
 import type { FastifyCookieOptions } from '@fastify/cookie'
 
 
-import { apimessageHandlers } from './messageHandler';
+import { apimessageHandlers } from './login/messageHandler';
 import { json } from 'stream/consumers';
 import { getMessageHandlers } from './getMessageHandler';
 

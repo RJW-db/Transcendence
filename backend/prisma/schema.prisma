@@ -14,6 +14,7 @@ model User {
   Secret2FA      String
   Password       String?
   OauthLogin     Boolean @default(false)
+  GuestLogin     Boolean @default(false)
   Online         Boolean @default(true)
   CreationDate   DateTime
   GamesWon       Int      @default(0)

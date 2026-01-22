@@ -4,15 +4,15 @@ import { authtoken } from 'ngrok';
 import oauthverifyPageHtml from '../html/oauthVerifyPage.html?raw';
 import { appRoot } from '../main';
 import { totpSetup } from "../src/authentication/TOTP-app";
-import {client_id, redirect_uri} from './.env';
+// import {client_id, redirect_uri} from './.env';
 
 
 export function oauthSignIn() {
   // Google's OAuth 2.0 endpoint for requesting an access token
   var oauth2Endpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
   // Parameters to pass to OAuth 2.0 endpoint.
-  var params = {client_id: client_id,
-                redirect_uri: redirect_uri,
+  var params = {client_id: '1017664873801-raklnn8mib38hhaqjar66bm45fonuov6.apps.googleusercontent.com',
+                redirect_uri: 'https://nondeprecatory-hyperexcursively-laverna.ngrok-free.dev/callback/google',
                 response_type: 'token',
                 scope: 'openid email profile'};
 
@@ -158,7 +158,11 @@ export async function createOauthUser(secret: string, loginToken: string)
       return;
     }
     else
+    {
       console.log("OAuth user created successfully");
+      alert("OAuth user created successfully");
+      window.close();
+    }
 
 }
 
