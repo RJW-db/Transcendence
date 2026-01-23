@@ -4,20 +4,47 @@ import { Logger } from 'pino'; // Example Logger
 
 import { SocketContext } from '../types';
 
-interface Vector2 {
-  x: number;
-  y: number;
-}
-
-export class GameStateInfo {
-    private leftPaddleY: number;
-    private rightPaddlyY: number;
-    private ballPos: Vector2:
-    private directionDegrees: number;
-};
-
-
-
-export const gameHandler = ({ io, socket, db }: SocketContext) => {
+export const gameHandler = ({ io, socket, gameManager }: SocketContext) => {
 	
+	socket.on('gameEvent', async (msg: string) => {
+		console.log(`${msg}`);
+		// console.log(`In gameHandler cookie test: ${socket.data.cookie}`);
+	})
+
+	socket.on('gameKey', (msg: any) => {
+		console.log(`Key pressed: ${msg}`);
+		gameManager.handleInput(socket.data.matchID, socket.data.userId, msg);
+	})
+
+	socket.on('joinGame', async (msg: string) => {
+		//Add users to waiting room
+		socket.join('waitRoom');
+
+		//Check if at least 2 people waiting
+		const sockets = await io.in('waitRoom').fetchSockets();
+		if (sockets.length === 2)
+		{
+			//Create Match entry in db
+			// const match = await ctx.db.match.create({
+			// 	data: {
+			// 		player1Id: socket.data.userId,
+			// 		player2Id: targetUserId,
+			// 		status: 'PENDING'
+			// 	}
+			// });
+
+			//Create room for match
+			// const matchID = `game:${match.id}`;
+			const matchID = `game:`;
+			sockets[0].join(matchID);
+			sockets[0].data.matchID = matchID;
+			sockets[1].join(matchID);
+			sockets[1].data.matchID = matchID;
+			io.in(matchID).socketsLeave('waitRoom');
+
+			//Start match
+			gameManager.createGame(matchID, sockets[0].data.userId, sockets[1].data.userId);
+		}
+
+	})
 }

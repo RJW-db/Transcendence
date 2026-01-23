@@ -18,8 +18,6 @@ RUN npm install && npm install vite
 # Copy the rest of the application source code
 COPY . .
 
-
-
 # Build the TypeScript application
 # RUN npm run build
 

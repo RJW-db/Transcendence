@@ -5,24 +5,10 @@ import { fork, ChildProcess } from 'child_process';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 import { apimessageHandlers, ApiMessageHandler } from './handlers/messageHandler';
-import { SocketContext, MyServer } from './types';
-import { GameStateInfo } from './handlers/game.handler.ts';
-const clients = new Map<Socket, number>();
-
-const matchlist = new Map<ChildProcess, Match>();
-
-class Match{
-	socket1 : Socket;
-	socket2 : Socket;
-	uid1 : any;
-	uid2 : any;
-	constructor(socketP1: Socket, socketP2: Socket, uidP1 : number, uidP2 : number){
-		this.socket1 = socketP1;
-		this.socket2 = socketP2;
-		this.uid1 = uidP1;
-		this.uid2 = uidP2;
-	}
-}
+import { SocketContext, MyServer, MySocket } from './types';
+import { gameHandler } from './handlers/game.handler';
+import { serverHandler } from './handlers/server.handler';
+import { GameWorkerManager } from './engine/workerManager';
 
 
 const fastify = Fastify({
@@ -36,48 +22,53 @@ fastify.ready((error) => {
 });
 
 
-const io = new Server(fastify.server, {
+const io: MyServer = new Server(fastify.server, {
 cors: {
 	origin: "*", // Allow all origins for simplicity, adjust in production
 	methods: ["GET", "POST"]
 },
 path: '/ws'
 });
-let dataid = 0;
+let dataid = 1;
 //console.log("client .size is ", clients.size);
 
+const gameManager = new GameWorkerManager(io);
 
-io.on('connection', (socket: Socket) => {
-	socket.on('message', (payload: string) => {
-        fastify.log.info(`Message from ${socket.id}: ${payload}`);
-        // forward to everyone except sender, or use socket.emit for ack
-        // socket.broadcast.emit('message', `Server relayed: ${payload}`);
-    });
-	
-	socket.on('gamestate', (data: string, gameStateInfo: GameStateInfo) => {
-		fastify.log.info(`gamestate from ${socket.id}: ${data}`);
-		// respond or broadcast as needed
-		io.emit('gamestate', data); // optional
-
-		console.log("hererere");
-	});
-// ...existin
+io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
-	clients.set( socket, dataid);
-	if (!clients.has(socket)){
-		console.log("Failed to add client to map");
-	}
-	io.emit('message','welcome from server ');
-	io.emit('game','game event!! ');
+	socket.data.userId = dataid;
+	// clients.set( socket, dataid);
+	// if (!clients.has(socket)){
+	// 	console.log("Failed to add client to map");
+	// }
+	// io.emit('chatMessage','welcome from server ');
+	// io.emit('chatMessage','game event!! ');
+
+	socket.join(`${socket.data.userId}`);
+	// if (io.sockets.adapter.rooms.get('1')?.size === 2) {
+	// 	console.log("Start game");
+	// 	gameManager.createGame('1');
+	// }
+
+	// const sockets = io.in('1').fetchSockets();
+	// if (sockets.length == 2)
+	// {
+	// 	console.log("Start game");
+	// 	gameManager.createGame('1', sockets[0].data.userId, sockets[1].data.userId);
+	// }
 
 	const ctx: SocketContext = {
 		io,
 		socket,
-		db: prisma, // Assuming you decorated fastify with prisma
+		gameManager
+		// db: prisma, // Assuming you decorated fastify with prisma
 		// logger: fastify.log,
 	};
-
+	// socket.data.userId = dataid;
+	socket.data.cookie = 'cookie';
 	dataid++;
+	gameHandler(ctx);
+	serverHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){
