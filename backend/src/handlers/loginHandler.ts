@@ -13,9 +13,9 @@ export type ApiMessageHandler = (
   reply: FastifyReply
 ) => Promise<void> | void;
 
-import {handleRegister, checkAccountExists} from './handleRegister';
-import {handleLogin, oauthLogin, handleLogout} from './handleLogin';
-import {handleOauthToken, oauthRegister} from './oauthRegister';
+import {handleRegister, checkAccountExists} from '../login/handleRegister';
+import {handleLogin, oauthLogin, handleLogout} from '../login/handleLogin';
+import {handleOauthToken, oauthRegister} from '../login/oauthRegister';
 
 export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'registerUser': handleRegister,

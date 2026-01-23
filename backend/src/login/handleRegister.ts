@@ -1,4 +1,4 @@
-import type { ApiMessageHandler } from './messageHandler';
+import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from './hashPasswords';
 import {verifyToken, generateSecret} from './TOTP'
 import {generateCookie} from './accountUtils'

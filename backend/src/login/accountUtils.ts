@@ -1,4 +1,5 @@
-import {FastifyRequest, FastifyInstance, FastifyReply} from 'fastify';
+import {FastifyInstance, FastifyReply} from 'fastify';
+
 import { PrismaClient } from '@prisma/client';
 
 import { randomUUID } from "crypto";
@@ -23,6 +24,7 @@ export async function getGoogleUserInfo(token: string, fastify: FastifyInstance,
 
 export async function generateCookie(userId : number, prisma: PrismaClient, reply: FastifyReply, fastify: FastifyInstance) : Promise<any> {
       const sessionId : string = randomUUID();
+
       reply.setCookie('sessionId', sessionId, {
           httpOnly: true, // js cannot access this cookie for security reasons
           path: '/', 

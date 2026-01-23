@@ -1,4 +1,4 @@
-import type { ApiMessageHandler } from './messageHandler';
+import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { verifyPassword } from './hashPasswords';
 import {verifyToken} from './TOTP'

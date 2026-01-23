@@ -4,6 +4,4 @@ implement guest account
 
 implement proper storing of login state in browser
 
-
-
 split up functions in backend and frontend

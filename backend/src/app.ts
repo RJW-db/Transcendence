@@ -4,7 +4,11 @@ import { Socket } from 'socket.io';
 import { fork, ChildProcess } from 'child_process';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
-import { apimessageHandlers, ApiMessageHandler } from './handlers/messageHandler';
+export const cookie = require('@fastify/cookie');
+import type { FastifyCookieOptions } from '@fastify/cookie'
+
+
+import { apimessageHandlers, ApiMessageHandler } from './handlers/loginHandler';
 import { SocketContext, MyServer, MySocket } from './types';
 import { gameHandler } from './handlers/game.handler';
 import { serverHandler } from './handlers/server.handler';
@@ -14,6 +18,13 @@ import { GameWorkerManager } from './engine/workerManager';
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
 });
+
+// export fastiftCookieOptions
+export const fastifyCookieOptions: FastifyCookieOptions = {
+    secret: process.env.COOKIE_SECRET || 'super-secret-dev-key-change-this', // for cookies signature
+    parseOptions: {}     // options for parsing cookies
+  };
+fastify.register(cookie, fastifyCookieOptions); 
 
 
 // When fastify is ready, initialize Socket.IO
@@ -132,7 +143,7 @@ fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 		const	data = request.body as any;
 		if (data.type) {
 			const	apiHandler = apimessageHandlers[data.type];
-			apiHandler(data.Payload, prisma, fastify, reply);
+			apiHandler(data.Payload, request, prisma, fastify, reply);
 		}
 		
 	}catch{
