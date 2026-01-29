@@ -9,6 +9,8 @@ import { SocketContext, MyServer, MySocket } from './types';
 import { gameHandler } from './handlers/game.handler';
 import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
+import {TournamentManager } from './engine/tournamentManager';
+import { tournamentHandler } from './handlers/tournamentHandler';
 
 
 const fastify = Fastify({
@@ -33,6 +35,7 @@ let dataid = 1;
 //console.log("client .size is ", clients.size);
 
 const gameManager = new GameWorkerManager(io);
+// const tournamentManager = new TournamentManager(gameManager, io);
 
 io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
@@ -61,6 +64,7 @@ io.on('connection', (socket: MySocket) => {
 		io,
 		socket,
 		gameManager
+		// tournamentManager
 		// db: prisma, // Assuming you decorated fastify with prisma
 		// logger: fastify.log,
 	};
@@ -69,6 +73,7 @@ io.on('connection', (socket: MySocket) => {
 	dataid++;
 	gameHandler(ctx);
 	serverHandler(ctx);
+	tournamentHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){

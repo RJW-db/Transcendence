@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client'; // Adjust if using a different DB
 import { GameWorkerManager } from '../engine/workerManager';
+import { TournamentManager } from '../engine/tournamentManager';
 // import { Logger } from 'pino';                 // Adjust if using a different Logger
 
 // ========================================================
@@ -20,6 +21,7 @@ export interface ClientToServerEvents {
   gameEvent: (msg: string) => void;
   gameKey: (msg: string) => void;
   joinGame: (msg: string) => void;
+  joinTournament: (msg: string) => void;
   // Add other events here
 }
 
@@ -31,6 +33,7 @@ export interface SocketData {
   userId: number;
   cookie: string;
   matchID: string;
+  tournament: TournamentManager;
   // Add other data here
 }
 
@@ -61,6 +64,7 @@ export interface SocketContext {
   io: MyServer;
   socket: MySocket;
   gameManager: GameWorkerManager;
+//   tournamentManager: TournamentManager;
   // db: PrismaClient; 
   // logger: Logger;
 }

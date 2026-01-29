@@ -5,6 +5,7 @@ import { MyServer } from '../types';
 
 export class GameWorkerManager {
   private worker: Worker;
+  public tournamentRunning = false;
 
   constructor(private io: MyServer) {
 
