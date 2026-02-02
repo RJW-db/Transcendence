@@ -1,7 +1,12 @@
+create tmpHomePage
+check if info correct otherwise alert
 
-implement guest account
 
+at start getCurrentLoginInfo
+go to profile page if logged in
+if not logged in go to home page
+
+how to manage single page application routing?
 
 implement proper storing of login state in browser
 
-split up functions in backend and frontend

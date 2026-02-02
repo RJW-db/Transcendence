@@ -13,9 +13,10 @@ export type ApiMessageHandler = (
   reply: FastifyReply
 ) => Promise<void> | void;
 
-import {handleRegister, checkAccountExists} from '../login/handleRegister';
+import {handleRegister, checkAccountExists, createGuestAccount} from '../login/handleRegister';
 import {handleLogin, oauthLogin, handleLogout} from '../login/handleLogin';
 import {handleOauthToken, oauthRegister} from '../login/oauthRegister';
+import { create } from 'node:domain';
 
 export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'registerUser': handleRegister,
@@ -24,5 +25,6 @@ export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'checkAccountExists': checkAccountExists,
   'oauthToken': handleOauthToken,
   'oauthRegister': oauthRegister,
-  'oauthLogin': oauthLogin
+  'oauthLogin': oauthLogin,
+  'createGuestAccount': createGuestAccount,
 };

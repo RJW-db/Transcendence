@@ -68,9 +68,10 @@ export async function registerUser(secret: string, token: string ) {
       console.log("error registering:", result.message);
       return ;
     }
-    else
-      alert("user account created");
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    localStorage.setItem("userEmail", result.user.email);
+    localStorage.setItem("userAlias", result.user.alias);
+    localStorage.setItem("userId", result.user.userID);
+    alert( "Registration successful! Redirecting to home page." );
     window.location.hash = '';
 }
 

@@ -28,7 +28,8 @@ export async function generateCookie(userId : number, prisma: PrismaClient, repl
       reply.setCookie('sessionId', sessionId, {
           httpOnly: true, // js cannot access this cookie for security reasons
           path: '/', 
-          secure: process.env.NODE_ENV === 'production', // Send only over HTTPS unless localhost for production
+          secure: true,
+          // secure: process.env.NODE_ENV === 'production', // Send only over HTTPS unless localhost for production
           sameSite: 'lax', // Protects against CSRF
           maxAge: 24 * 60 * 60 * 7 // Expire after 7 days (in seconds)
       });
@@ -40,7 +41,7 @@ export async function generateCookie(userId : number, prisma: PrismaClient, repl
       });
       if (!dbCookie) {
         fastify.log.error(`Failed to create cookie for user ID: ${userId}`);
-        reply.status(500).send({ message: 'Failed to create cookie session' });
+        reply.status(500).send({ message: 'Failed to create cookie session, you are now not logged in' });
         return;
       }
       fastify.log.info(`Created cookie in DB for user ID: ${userId} with sessionId: ${sessionId}`);

@@ -7,6 +7,7 @@ import { showRegisterPage } from "./login/registerLogic";
 import { showLoginPage } from "./login/loginLogic";
 import { showUserInfoPage } from "./login/userInfoPage";
 import { showLogoutPage } from "./login/logout";
+import { showTempHomePage } from "./login/tempHomePage";
 
 // // Initialize WebSocket
 // function initWebSocket() {
@@ -61,7 +62,12 @@ async function handleHashChange() {
       await showLogoutPage();
       break;
     default:
-      await showHomePage();
+      if (localStorage.getItem("userId")) {
+        console.log("User is logged in, redirecting to user info page.");
+        await showTempHomePage();
+        return;
+      }
+      setHash('#login');
       break;
   }
 }

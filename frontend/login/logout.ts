@@ -24,6 +24,6 @@ export async function showLogoutPage() {
         console.log('logout successful:', result.message);
         logoutText && (logoutText.textContent = 'Logout successful. Redirecting to home page...');
     }
-        await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     window.location.hash = '';
 }

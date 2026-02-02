@@ -42,7 +42,7 @@ export const handleRegister: ApiMessageHandler = async (
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
-  reply.status(200).send({ message: "Created new user with email: " + user.Email });
+  reply.status(200).send({ message: "Created new user with email: " + user.Email, user: {email: user.Email, alias: user.Alias, userID: user.ID}});
 }
 
 
@@ -75,35 +75,34 @@ export const checkAccountExists: ApiMessageHandler = async (
   reply.status(200).send({ message: "No accounts with email: " + payload.Email + " or alias: " + payload.Alias + " exist", secret: secret });
 };
 
-
-
-// const createGuestAccountL: ApiMessageHandler = async (
-//   payload: { Alias: string },
-//   request,
-//   prisma,
-//   fastify,
-//   reply
-// ) => {
-//   fastify.log.info(`Handling guest account creation for alias: ${payload.Alias}`);
-//   const secret = generateSecret();
-//   const user = await prisma.user.create({
-//     data: {
-//       Alias: payload.Alias,
-//       Email: secret,
-//       Password: '',
-//       Secret2FA: secret,
-//       GuestLogin: true,
-//       CreationDate: new Date(),
-//     },
-//   });
-//   if (!user) {
-//     fastify.log.error(`Failed to create guest account for alias: ${payload.Alias}`);
-//     reply.status(500).send({ message: 'Failed to create guest account' });
-//     return;
-//   }
-//   fastify.log.info(`Guest account created successfully: ${JSON.stringify(user)}`);
-//   const dbCookie = await generateCookie(user.ID, prisma, reply, fastify);
-//   if (!dbCookie) 
-//     return;
-//   reply.status(200).send({ message: 'Guest account created successfully', user: { id: user.ID, alias: user.Alias} });
-// }
+export const createGuestAccount : ApiMessageHandler = async (
+  payload: { Alias: string },
+  request,
+  prisma,
+  fastify,
+  reply
+) => {
+  fastify.log.info(`Handling guest account creation for alias: ${payload.Alias}`);
+  const secret = ''
+  const email = payload.Alias + '@guest.account'
+  const alias = payload.Alias + '_guest'
+  const user = await prisma.user.create({
+    data: {
+      Alias: alias,
+      Email: email,
+      Password: '',
+      Secret2FA: secret,
+      GuestLogin: true,
+      CreationDate: new Date(),
+    },
+  });
+  if (!user) {
+    fastify.log.error(`Failed to create guest account for alias: ${payload.Alias}`);
+    reply.status(500).send({ message: 'Failed to create guest account' });
+    return;
+  }
+  if (!await generateCookie(user.ID, prisma, reply, fastify))
+    return;
+  fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
+  reply.status(200).send({ message: "Created new guest user ", user: {email: user.Email, alias: user.Alias, userID: user.ID, guestLogin: true}});
+};

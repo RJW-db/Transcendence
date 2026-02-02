@@ -6,10 +6,12 @@ export async function showUserInfoPage() {
     const userInfoDiv = appRoot.querySelector('#user-details');
 
     // Fetch user info from the server
-    const response = await fetch('/api?type=getUserInfo', {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-    });
+    const response = await fetch('/api', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: JSON.stringify({
+      type: 'checkAccountExists'
+    })});
     const result = await response.json();
     if (!response.ok) {
         console.log('Failed to fetch user info:', result.message);

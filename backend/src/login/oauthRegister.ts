@@ -79,5 +79,5 @@ export const oauthRegister: ApiMessageHandler = async (
   if (!dbCookie)
       return;
   fastify.log.info(`User logged in successfully: ${JSON.stringify(user)}`);
-  reply.status(200).send({ message: 'OAuth login successful', user: { id: user.ID, alias: user.Alias, email: user.Email } });
+  reply.status(200).send({ message: 'OAuth login successful', user: {email: user.Email, alias: user.Alias, userID: user.ID} });
 }
