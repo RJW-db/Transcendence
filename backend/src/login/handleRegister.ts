@@ -1,8 +1,8 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from './hashPasswords';
-import {verifyToken, generateSecret} from './TOTP'
-import {generateCookie} from './accountUtils'
-
+import { verifyToken, generateSecret } from './TOTP'
+import { generateCookie } from './accountUtils'
+import { JWT_SECRET, generateJWT, verifyJWT } from './jsonWebToken';
 
 
 export const handleRegister: ApiMessageHandler = async (
@@ -12,6 +12,7 @@ export const handleRegister: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
+  console.log('=== REGISTER HANDLER STARTED ===');
   if (!payload.Alias || !payload.Email || !payload.Password || !payload.Secret) {
     fastify.log.error(`Incomplete user info received:' ${JSON.stringify(payload)}`);
     reply.status(500).send({ message: 'Incomplete user info received to register account' });
@@ -39,6 +40,22 @@ export const handleRegister: ApiMessageHandler = async (
     reply.status(400).send({ message: "Failed to create user object" });
     return;
   }
+
+  // let currentTime = Date.now() / 1000;
+  // let payloadJWT = { sub: user.ID, iat: Math.floor(currentTime), exp: Math.floor(currentTime) + (600) }; // Token valid for 10 minutes
+  // let token = generateJWT(payloadJWT, JWT_SECRET);
+  // console.log(token);
+
+
+  
+  // // Example usage of verifyJWT
+  // try {
+  //     const decoded = verifyJWT(token, JWT_SECRET);
+  //     console.log('Decoded JWT:', decoded);
+  // } catch (e) {
+  //     console.error('JWT verification failed:', (e as Error).message);
+  // }
+
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);

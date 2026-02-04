@@ -33,6 +33,7 @@ export async function showLoginPage(): Promise<void> {
     const { email, password, token2fa } = getLoginFormData(form as HTMLFormElement);
 
     const response = await sendLoginRequest(email, password, token2fa);
+    // const totp = await send
     const result = await response.json();
     if (!response.ok) {
       console.log('login failed:', result.message);

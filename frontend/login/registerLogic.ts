@@ -59,6 +59,7 @@ async function sendAccountExistCheck():Promise < Response > {
   });
   return response;
 }
+
 export async function registerUser(secret: string, token: string ) {
     const response = await sendRegisterRequest(secret, token );
     const result = await response.json();

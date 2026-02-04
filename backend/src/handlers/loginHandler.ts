@@ -14,13 +14,13 @@ export type ApiMessageHandler = (
 ) => Promise<void> | void;
 
 import {handleRegister, checkAccountExists, createGuestAccount} from '../login/handleRegister';
-import {handleLogin, oauthLogin, handleLogout} from '../login/handleLogin';
+import {handleLoginPassword, handleLoginTotp, oauthLogin, handleLogout} from '../login/handleLogin';
 import {handleOauthToken, oauthRegister} from '../login/oauthRegister';
 import { create } from 'node:domain';
 
 export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'registerUser': handleRegister,
-  'loginUser': handleLogin,
+  'loginUser': handleLoginPassword,
   'logoutUser': handleLogout,
   'checkAccountExists': checkAccountExists,
   'oauthToken': handleOauthToken,

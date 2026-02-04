@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0',
     allowedHosts: [
-    'nondeprecatory-hyperexcursively-laverna.ngrok-free.dev'
+    'kanesha-surmisable-unintrudingly.ngrok-free.dev'
 	],
     proxy: {
       '/ws': {
