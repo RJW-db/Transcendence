@@ -8,13 +8,15 @@ export class TournamentManager {
 
 	private round = 0;
 	private continue = true;
-	private players: MySocket[] = [];
-	private winners: MySocket[] = [];
+	// We populate these from `io.in(...).fetchSockets()`, which returns `RemoteSocket`s.
+	// Use a broad type here to avoid strict incompatibilities between `Socket` and `RemoteSocket`.
+	private players: any[] = [];
+	private winners: any[] = [];
 
 	update = async() => {
 		if (this.round === 0) {
 			const sockets = await this.io.in('Tournament').fetchSockets();
-			sockets.forEach((socket: MySocket) => {
+			sockets.forEach((socket) => {
 				this.players.push(socket);
 				this.winners.push(socket);
 			});

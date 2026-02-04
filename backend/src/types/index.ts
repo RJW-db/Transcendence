@@ -8,10 +8,21 @@ import { TournamentManager } from '../engine/tournamentManager';
 // 1. EVENT DEFINITIONS
 // ========================================================
 
+export interface DirectMessagePayload {
+  receiverId: number;
+  message: string;
+}
+
+export interface IncomingDirectMessage {
+  senderId: number;
+  message: string;
+}
+
 export interface ServerToClientEvents {
   chatMessage: (msg: string) => void;
   notification: (msg: string) => void;
   gameState: (msg: any) => void;
+  directMessage: (msg: IncomingDirectMessage) => void;
   // Add other events here
 }
 
@@ -22,6 +33,9 @@ export interface ClientToServerEvents {
   gameKey: (msg: string) => void;
   joinGame: (msg: string) => void;
   joinTournament: (msg: string) => void;
+  startTournament: () => void;
+  leaveTournament: () => void;
+  sendDirectMessage: (msg: DirectMessagePayload) => void;
   // Add other events here
 }
 
@@ -64,7 +78,7 @@ export interface SocketContext {
   io: MyServer;
   socket: MySocket;
   gameManager: GameWorkerManager;
+  db: PrismaClient; 
 //   tournamentManager: TournamentManager;
-  // db: PrismaClient; 
   // logger: Logger;
 }

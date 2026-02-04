@@ -1,6 +1,11 @@
 import io  from 'socket.io-client';
 import './styles.css';
 
+// Local type for direct messages received from the backend
+interface IncomingDirectMessage {
+	senderId: number;
+	message: string;
+}
 
 const	views = {
 	firstPage: `
@@ -191,6 +196,16 @@ const socket = io ({
 });
 
 
+// Expose for easy manual testing in the browser console
+;(window as any).sendDM = (receiverId: number, message: string) => {
+	socket.emit('sendDirectMessage', { receiverId, message });
+};
+
+socket.on('directMessage', (msg: IncomingDirectMessage) => {
+	console.log('Received direct message:', msg);
+});
+// Remove ^^^^ this before final commit
+
 
 socket.on('connect', () => {
 	console.log('Connected to Socket.IO server!');
@@ -223,29 +238,31 @@ socket.on('gameState', (msg: any) => {
 
 
 
-// Register button event listener
-const registerButton = document.getElementById('registerButton') as HTMLButtonElement;
-registerButton.addEventListener('click', () => {
-  console.log('Register button clicked');
+// Optional legacy controls (only attach if elements exist in the DOM)
+const registerButton = document.getElementById('registerButton') as HTMLButtonElement | null;
+if (registerButton) {
+	registerButton.addEventListener('click', () => {
+		console.log('Register button clicked');
+		registerUser();
+	});
+}
 
-	registerUser();
-	
-});
+const loginButton = document.getElementById('loginButton') as HTMLButtonElement | null;
+if (loginButton) {
+	loginButton.addEventListener('click', () => {
+		console.log('Login button clicked');
+		loginUser();
+	});
+}
 
-// Login button event listener
-const loginButton = document.getElementById('loginButton') as HTMLButtonElement;
-loginButton.addEventListener('click', () => {
-  console.log('Login button clicked');
-
-	loginUser();
-});
-
-const	upgrade = document.getElementById('upgradeConnectionButton') as HTMLButtonElement;
-upgrade.addEventListener('click', () => {
-	console.log('upgrade button clicked');
-	socket.emit('message', 'Hello from the client!');
-	socket.emit('login', 1);
-});
+const upgrade = document.getElementById('upgradeConnectionButton') as HTMLButtonElement | null;
+if (upgrade) {
+	upgrade.addEventListener('click', () => {
+		console.log('upgrade button clicked');
+		socket.emit('message', 'Hello from the client!');
+		socket.emit('login', 1);
+	});
+}
 
 
 

@@ -11,6 +11,7 @@ import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
+import { directMessageHandler } from './handlers/directMessageHandlers';
 
 
 const fastify = Fastify({
@@ -63,9 +64,9 @@ io.on('connection', (socket: MySocket) => {
 	const ctx: SocketContext = {
 		io,
 		socket,
-		gameManager
+		gameManager,
+		db: prisma // Assuming you decorated fastify with prisma
 		// tournamentManager
-		// db: prisma, // Assuming you decorated fastify with prisma
 		// logger: fastify.log,
 	};
 	// socket.data.userId = dataid;
@@ -74,7 +75,7 @@ io.on('connection', (socket: MySocket) => {
 	gameHandler(ctx);
 	serverHandler(ctx);
 	tournamentHandler(ctx);
-
+	directMessageHandler(ctx);
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){
 	// 		console.log("we have two clients !");
