@@ -60,13 +60,13 @@ export const tournamentHandler = ({ io, socket, gameManager }: SocketContext) =>
 
 	const tournament = new TournamentManager(io, socket, gameManager);
 	socket.data.tournament = tournament;
-	tournament.startRound();
+	// tournament.startRound();
 	setInterval(() => {
 		tournament.update();
 	}, repeat);
   })
 
-  socket.on('leaveTournament', () => {
-    // Logic for leaving
-  });
+//   socket.on('leaveTournament', () => {
+//     // Logic for leaving
+//   });
 };

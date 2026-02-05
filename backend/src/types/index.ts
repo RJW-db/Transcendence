@@ -12,6 +12,7 @@ export interface ServerToClientEvents {
   chatMessage: (msg: string) => void;
   notification: (msg: string) => void;
   gameState: (msg: any) => void;
+  finished: (msg: any) => void;
   // Add other events here
 }
 
@@ -22,6 +23,7 @@ export interface ClientToServerEvents {
   gameKey: (msg: string) => void;
   joinGame: (msg: string) => void;
   joinTournament: (msg: string) => void;
+  startTournament: (msg: string) => void;
   // Add other events here
 }
 
@@ -32,7 +34,7 @@ export interface InterServerEvents {
 export interface SocketData {
   userId: number;
   cookie: string;
-  matchID: string;
+  matchID: string | null;
   tournament: TournamentManager;
   // Add other data here
 }
@@ -64,7 +66,7 @@ export interface SocketContext {
   io: MyServer;
   socket: MySocket;
   gameManager: GameWorkerManager;
-//   tournamentManager: TournamentManager;
-  // db: PrismaClient; 
+  db: PrismaClient; 
+  //   tournamentManager: TournamentManager;
   // logger: Logger;
 }

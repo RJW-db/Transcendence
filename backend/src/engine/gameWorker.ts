@@ -11,15 +11,27 @@ setInterval(() => {
   if (games.size === 0) return;
 
   const updates: any[] = [];
+  const finished: any[] = [];
 
   games.forEach((game) => {
     game.update();
     // Prepare snapshot to send to main thread
-    updates.push({ roomId: game.id, state: game.state });
+    if (game.end === false)
+      updates.push({ roomId: game.roomId, state: game.state });
+    else {
+      finished.push({matchId: game.matchId, roomId: game.roomId, state: game.state });
+      games.delete(game.roomId);
+    }
+
   });
 
   // Batch send updates to Main Thread to reduce message overhead
-  if (parentPort) parentPort.postMessage({ type: 'UPDATE_BATCH', updates });
+  if (parentPort) {
+    parentPort.postMessage({ type: 'UPDATE_BATCH', updates });
+    if (finished.length !== 0)
+      parentPort.postMessage({ type: 'FINISHED', finished });
+  }
+
 }, TICK_RATE);
 
 // === 2. Handle Messages from Main Thread ===
@@ -27,7 +39,7 @@ if (parentPort) {
   parentPort.on('message', (msg: any) => {
     switch (msg.type) {
       case 'CREATE_GAME':
-        games.set(msg.roomId, new PongGame(msg.roomId, msg.p1, msg.p2));
+        games.set(msg.roomId, new PongGame(msg.matchId, msg.roomId, msg.p1, msg.p2));
         const gamestart = games.get(msg.roomId);
         if (gamestart) gamestart.init();
         break;

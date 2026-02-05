@@ -33,13 +33,40 @@ path: '/ws'
 });
 let dataid = 1;
 //console.log("client .size is ", clients.size);
+async function register() {
 
-const gameManager = new GameWorkerManager(io);
+	while (dataid <= 20) {
+		let name = `user${dataid}`
+		let mail = `${name}@gmail.com`
+		let user = await prisma.user.findFirst({
+			where: {Alias: name}
+		})
+		if (!user) {
+			user = await prisma.user.create({
+				data: {
+					Alias: name,
+					Email: mail,
+					Password: `${dataid}`,
+					Online: true,
+					CreationDate: new Date()
+				}
+			})
+		}
+		if (user)
+			console.log(`${user.Alias}`)
+		dataid++;
+	}
+	dataid = 1;
+}
+register();
+
+const gameManager = new GameWorkerManager(io, prisma);
 // const tournamentManager = new TournamentManager(gameManager, io);
 
 io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
 	socket.data.userId = dataid;
+	socket.data.matchID = null;
 	// clients.set( socket, dataid);
 	// if (!clients.has(socket)){
 	// 	console.log("Failed to add client to map");
@@ -63,9 +90,9 @@ io.on('connection', (socket: MySocket) => {
 	const ctx: SocketContext = {
 		io,
 		socket,
-		gameManager
+		gameManager,
+		db: prisma // Assuming you decorated fastify with prisma
 		// tournamentManager
-		// db: prisma, // Assuming you decorated fastify with prisma
 		// logger: fastify.log,
 	};
 	// socket.data.userId = dataid;

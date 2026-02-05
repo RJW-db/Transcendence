@@ -14,14 +14,14 @@ export class TournamentManager {
 	update = async() => {
 		if (this.round === 0) {
 			const sockets = await this.io.in('Tournament').fetchSockets();
-			sockets.forEach((socket: MySocket) => {
+			sockets.forEach((socket: any) => {
 				this.players.push(socket);
 				this.winners.push(socket);
 			});
-			this.startRound();
+			// this.startRound();
 		}
 		if (this.round % 2 === 1) {
-			this.winners.forEach((socket: MySocket) => {
+			this.winners.forEach((socket: any) => {
 				if (socket.data.matchID)
 					return ;
 			});
@@ -33,36 +33,36 @@ export class TournamentManager {
 		if (this.round === 0) {}
 	}
 
-	startRound = async() => {
-		// const sockets = await this.io.in('Tournament').fetchSockets();
-		let i = 0;
-		if (this.winners.length === 1) {
-			//last player in winners wins the tournament, finish and exit tournament from here
-		}
-		while (i < this.winners.length - 1) {
-			let matchID = `game:${i}`;
-			if (this.winners[i].connected === true) {
-				this.winners[i].join(matchID);
-				this.winners[i].data.matchID = matchID;
-			}
-			else {
-				//p1 will be AI
-			}
-			if (this.winners[i + 1].connected === true) {
-				this.winners[i + 1].join(matchID);
-				this.winners[i + 1].data.matchID = matchID;
-			}
-			else {
-				//p2 will be AI
-			}
-			this.gameManager.createGame(matchID, this.winners[i].data.userId, this.winners[i + 1].data.userId);
-			i += 2;
-		}
-		if (this.winners.length % 2 !== 0) {
-			//last remaining socket will play against AI
-		}
-		this.round += 1;
-	}
+	// startRound = async() => {
+	// 	// const sockets = await this.io.in('Tournament').fetchSockets();
+	// 	let i = 0;
+	// 	if (this.winners.length === 1) {
+	// 		//last player in winners wins the tournament, finish and exit tournament from here
+	// 	}
+	// 	while (i < this.winners.length - 1) {
+	// 		let matchID = i;
+	// 		if (this.winners[i].connected === true) {
+	// 			this.winners[i].join(matchID);
+	// 			this.winners[i].data.matchID = matchID;
+	// 		}
+	// 		else {
+	// 			//p1 will be AI
+	// 		}
+	// 		if (this.winners[i + 1].connected === true) {
+	// 			this.winners[i + 1].join(matchID);
+	// 			this.winners[i + 1].data.matchID = matchID;
+	// 		}
+	// 		else {
+	// 			//p2 will be AI
+	// 		}
+	// 		this.gameManager.createGame(matchID, this.winners[i].data.userId, this.winners[i + 1].data.userId);
+	// 		i += 2;
+	// 	}
+	// 	if (this.winners.length % 2 !== 0) {
+	// 		//last remaining socket will play against AI
+	// 	}
+	// 	this.round += 1;
+	// }
 
 
 

@@ -1,9 +1,11 @@
 import { stat } from "fs";
 
 export class PongGame {
-  public id: string;
+  public matchId: number;
+  public roomId: string;
   public p1Id: number; // Store the ID of Player 1
   public p2Id: number; // Store the ID of Player 2
+  public end = false;
 
   public state = {
     ball: { x: 400, y: 300, dx: -2, dy: 2 },
@@ -33,8 +35,9 @@ export class PongGame {
   private isReset = false;
   private paddleChange = false;
 
-  constructor(id: string, p1Id: number, p2Id: number) {
-    this.id = id;
+  constructor(matchId: number, roomId: string, p1Id: number, p2Id: number) {
+    this.matchId = matchId;
+    this.roomId = roomId;
     this.p1Id = p1Id;
     this.p2Id = p2Id;
   }
@@ -250,6 +253,8 @@ export class PongGame {
         this.state.score.p1 += 1;
         this.reset(-1);
       }
+      if (this.state.score.p1 === 1 || this.state.score.p2 === 1)
+        this.end = true;
       return ;
     }
 

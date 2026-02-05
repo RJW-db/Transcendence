@@ -75,9 +75,9 @@ model Match {
   ID            Int      @id @default(autoincrement())
   Player1ID     Int
   Player2ID     Int
-  Player1Score  Int
-  Player2Score  Int
-  CreationDate  DateTime
+  Player1Score  Int      @default(0)
+  Player2Score  Int      @default(0)
+  CreationDate  DateTime @default(now())
   WinnerID      Int?
   Player1       User     @relation("Player1", fields: [Player1ID], references: [ID])
   Player2       User     @relation("Player2", fields: [Player2ID], references: [ID])

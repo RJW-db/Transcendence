@@ -215,7 +215,12 @@ socket.on('game', (msg) => {
 
 socket.on('gameState', (msg: any) => {
 	console.log('Received gamestate');
-	renderGameState(msg);
+	renderGameState(msg, false);
+})
+
+socket.on('finished', (msg: any) => {
+	console.log('Received finished');
+	renderGameState(msg, true);
 })
 
 
@@ -355,8 +360,16 @@ function	updateScore(scoreBoardLeft: number, scoreBoardRight : number){
 	
 }
 
-function	renderGameState(gameState : any){
+function	renderGameState(gameState : any, finished: boolean){
 	updatePaddlePosition(gameState.p1X, gameState.p1Y, gameState.p2X, gameState.p2Y);
 	movingBall(gameState.ball.x, gameState.ball.y);
 	updateScore(gameState.score.p1, gameState.score.p2);
+	if (finished) {
+		const winnerMessage = document.getElementById('winner-message') as HTMLElement;
+		if (gameState.score.p1 > gameState.score.p2)
+			winnerMessage.textContent = "P1 won!";
+		else
+			winnerMessage.textContent = "P2 won!";
+		winnerMessage.style.display = 'block';
+	}
 }
