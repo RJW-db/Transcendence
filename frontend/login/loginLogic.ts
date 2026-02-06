@@ -32,34 +32,33 @@ export async function showLoginPage(): Promise<void> {
     const formData = new FormData(form);
     const { email, password, token2fa } = getLoginFormData(form as HTMLFormElement);
 
-    const response = await sendLoginRequest(email, password, token2fa);
-    // const totp = await send
+    const response = await sendLoginRequest(email, password);
     const result = await response.json();
     if (!response.ok) {
       console.log('login failed:', result.message);
       errorBox!.textContent = `Error: ${result.message}`;
       return;
     }
-    localStorage.setItem("userEmail", result.user.email);
-    localStorage.setItem("userAlias", result.user.alias);
-    localStorage.setItem("userId", result.user.userID);
+
+    // Now send 2FA token with the temporary token
+    const totpResponse = await sendTotpRequest(token2fa, result.tmpToken);
+    const totpResult = await totpResponse.json();
+    if (!totpResponse.ok) {
+      console.log('2FA verification failed:', totpResult.message);
+      errorBox!.textContent = `Error: ${totpResult.message}`;
+      return;
+    }
+
+    localStorage.setItem("userEmail", totpResult.user.email);
+    localStorage.setItem("userAlias", totpResult.user.alias);
+    localStorage.setItem("userId", totpResult.user.userID);
     localStorage.setItem("guestUser", "false");
     window.location.hash = '';
-  }
-  );
-
+  });
 }
 
-function getLoginFormData(form: HTMLFormElement): { email: string; password: string; token2fa: string } {
-  const data = new FormData(form);
-  return {
-    email: data.get('email') as string,
-    password: data.get('password') as string,
-    token2fa: data.get('2faToken') as string,
-  };
-}
-
-async function sendLoginRequest(email: string, password: string, token2fa: string): Promise<Response> {
+// Update sendLoginRequest to not include token2fa
+async function sendLoginRequest(email: string, password: string): Promise<Response> {
   const response = await fetch('/api', {
     method: 'POST',
     headers: {
@@ -69,12 +68,28 @@ async function sendLoginRequest(email: string, password: string, token2fa: strin
       type: 'loginUser',
       Payload: {
         Email: email,
-        Password: password,
-        Token2fa: token2fa
+        Password: password
       }
     }),
-  }
-  );
+  });
+  return response;
+}
+
+// Add new function to send TOTP verification
+async function sendTotpRequest(token2fa: string, tempToken: string): Promise<Response> {
+  const response = await fetch('/api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'verifyTotp',
+      Payload: {
+        Token2fa: token2fa,
+        tempToken: tempToken
+      }
+    }),
+  });
   return response;
 }
 

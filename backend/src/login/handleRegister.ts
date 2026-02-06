@@ -2,11 +2,11 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from './hashPasswords';
 import { verifyToken, generateSecret } from './TOTP'
 import { generateCookie } from './accountUtils'
-import { JWT_SECRET, generateJWT, verifyJWT } from './jsonWebToken';
+import { JWT_SECRET, generateJWT, decodeJWT } from './jsonWebToken';
 
 
 export const handleRegister: ApiMessageHandler = async (
-  payload: { Alias: string; Email: string; Password: string, Secret: string, VerifyToken: string },
+  payload: { Alias: string; Email: string; Password: string, Secret: string },
   request,
   prisma,
   fastify,
@@ -18,11 +18,7 @@ export const handleRegister: ApiMessageHandler = async (
     reply.status(500).send({ message: 'Incomplete user info received to register account' });
     return;
   }
-  if (!(await verifyToken(payload.VerifyToken, payload.Secret))) {
-    fastify.log.error(`Incorrect Token entered for registration:' ${JSON.stringify(payload)}`);
-    reply.status(400).send({message: "Incorrect Token entered"});
-    return;
-  }
+
   const hashedPassword = await hashPassword(payload.Password)
   const user = await prisma.user.create({
     data: {
@@ -41,27 +37,46 @@ export const handleRegister: ApiMessageHandler = async (
     return;
   }
 
-  // let currentTime = Date.now() / 1000;
-  // let payloadJWT = { sub: user.ID, iat: Math.floor(currentTime), exp: Math.floor(currentTime) + (600) }; // Token valid for 10 minutes
-  // let token = generateJWT(payloadJWT, JWT_SECRET);
-  // console.log(token);
+  let tmpToken = generateJWT(user.ID, JWT_SECRET);
+  reply.cookie('tempAuth', tmpToken, { maxAge: 600000 }); // 10 minutes
 
+  fastify.log.info(`Registered new user: ${JSON.stringify(user)}`);
+  reply.status(200).send({ message: "User registered, please verify 2FA code", tmpToken, userID: user.ID });
+};
 
+export const handleRegisterTotp: ApiMessageHandler = async (
+  payload: { VerifyToken: string, tempToken: string },
+  request,
+  prisma,
+  fastify,
+  reply
+) => {
+  const decoded = decodeJWT(payload.tempToken, JWT_SECRET);
+  if (!decoded) {
+    reply.status(401).send({ message: 'Session expired' });
+    return;
+  }
+
+  const userId = decoded.sub;
   
-  // // Example usage of verifyJWT
-  // try {
-  //     const decoded = verifyJWT(token, JWT_SECRET);
-  //     console.log('Decoded JWT:', decoded);
-  // } catch (e) {
-  //     console.error('JWT verification failed:', (e as Error).message);
-  // }
+  const user = await prisma.user.findUnique({ where: { ID: userId } });
+  if (!user) {
+    reply.status(400).send({ message: 'User not found' });
+    return;
+  }
+
+  if (!(await verifyToken(payload.VerifyToken, user.Secret2FA))) {
+    fastify.log.error(`Incorrect Token entered for registration`);
+    reply.status(400).send({message: "Incorrect Token entered"});
+    return;
+  }
 
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
-  fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
-  reply.status(200).send({ message: "Created new user with email: " + user.Email, user: {email: user.Email, alias: user.Alias, userID: user.ID}});
-}
-
+  
+  fastify.log.info(`User verified 2FA for registration: ${JSON.stringify(user)}`);
+  reply.status(200).send({ message: "Registration complete", user: {email: user.Email, alias: user.Alias, userID: user.ID}});
+};
 
 
 

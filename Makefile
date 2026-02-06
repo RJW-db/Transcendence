@@ -44,6 +44,9 @@ kill-ngrok:
 		pkill ngrok && echo "ngrok killed"; \
 	fi
 
+log:
+	docker-compose logs -f
+
 clean: kill-ngrok
 	docker compose down --volumes
 	rm -rf ./backend/data

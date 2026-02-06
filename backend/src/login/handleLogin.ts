@@ -2,7 +2,7 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { verifyPassword } from './hashPasswords';
 import { verifyToken } from './TOTP'
-import { JWT_SECRET, generateJWT, verifyJWT } from './jsonWebToken';
+import { JWT_SECRET, generateJWT, verifyJWT, decodeJWT } from './jsonWebToken';
 
 
 export const handleLoginPassword: ApiMessageHandler = async (
@@ -54,17 +54,13 @@ export const handleLoginTotp: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
-  const user = await prisma.user.findUnique({
-    where: { Email: payload.Email },
-  });
-  
-  if (!verifyJWT(payload.tempToken, JWT_SECRET)) {
+  const decoded = decodeJWT(payload.tempToken, JWT_SECRET);
+  if (!decoded) {
     reply.status(401).send({ message: 'Session expired' });
     return;
   }
 
-  const decoded = verifyJWT(payload.tempToken, JWT_SECRET);
-  // const userId = decoded.payload.sub as number;
+  const userId = decoded.sub;
   
   const user = await prisma.user.findUnique({ where: { ID: userId } });
   if (!user) {
