@@ -4,6 +4,8 @@ import { totpSetup, validateEmail } from "../src/authentication/TOTP-app";
 import { verifyToken } from "../src/authentication/TOTP";
 import { error } from "node:console";
 import { read } from "node:fs";
+import { fetchWithJWTRefresh } from './fetchWithJWTRefresh';
+
 
 let Alias = '';
 let Email = '';
@@ -56,7 +58,7 @@ async function sendRegisterRequest(secret: string): Promise<Response> {
 }
 
 async function sendRegisterTotpRequest(token: string, tempToken: string): Promise<Response> {
-  const response = await fetch('/api', {
+  const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -101,7 +103,7 @@ export async function showRegisterPage(): Promise<void> {
     Email = email;
     Password = password;
 
-    const checkRes = await fetch('/api', {
+    const checkRes = await fetchWithJWTRefresh('/api', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

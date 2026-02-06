@@ -28,23 +28,11 @@ export const handleLoginPassword: ApiMessageHandler = async (
     return;
   }
 
-  let tmpToken = generateJWT(user.ID, JWT_SECRET);
-  reply.cookie('tempAuth', tmpToken, { maxAge: 600000 }); // 10 minutes
+  let tmpToken = generateJWT(user.ID, JWT_SECRET, 86400 * 7); // 7 days
+  reply.cookie('tempAuth', tmpToken, { maxAge: 86400 * 7 * 1000 }); // 7 days
 
   // Return temporary token so frontend can use it with TOTP
   reply.status(200).send({ message: 'Password verified, please enter 2FA code', tmpToken });
-
-  // if (!(await verifyToken(payload.Token2fa, user.Secret2FA))) {
-  //   fastify.log.error(`Invalid code entered for email: ${payload.Email}, code provided: ${payload.Token2fa}`);
-  //   reply.status(400).send({ message: 'Invalid 2FA token entered' });
-  //   return;
-  // }
-  // // Set a cookie or session here if needed
-  // const dbCookie = await generateCookie(user.ID, prisma, reply, fastify);
-  // if (!dbCookie) 
-  //   return;
-  // fastify.log.info(`User logged in successfully: ${JSON.stringify(user)}`);
-  // reply.status(200).send({ message: 'Login successful', user: {email: user.Email, alias: user.Alias, userID: user.ID} });
 }
 
 export const handleLoginTotp: ApiMessageHandler = async (

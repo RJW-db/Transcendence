@@ -2,9 +2,7 @@ import { appRoot, showHomePage } from "../main";
 import loginPageHtml from '../html/loginPage.html?raw';
 import guestLoginHtml from '../html/guestLogin.html?raw';
 import { oauthSignIn } from "./auth";
-import { get } from "node:http";
-import { resourceLimits } from "node:worker_threads";
-
+import { fetchWithJWTRefresh } from './fetchWithJWTRefresh';
 
 export async function showLoginPage(): Promise<void> {
   appRoot.innerHTML = loginPageHtml;
@@ -59,7 +57,7 @@ export async function showLoginPage(): Promise<void> {
 
 // Update sendLoginRequest to not include token2fa
 async function sendLoginRequest(email: string, password: string): Promise<Response> {
-  const response = await fetch('/api', {
+  const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -77,7 +75,7 @@ async function sendLoginRequest(email: string, password: string): Promise<Respon
 
 // Add new function to send TOTP verification
 async function sendTotpRequest(token2fa: string, tempToken: string): Promise<Response> {
-  const response = await fetch('/api', {
+  const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -94,7 +92,7 @@ async function sendTotpRequest(token2fa: string, tempToken: string): Promise<Res
 }
 
 async function userLoggedIn(): Promise<boolean> {
-  const response = await fetch('/api?type=getUserInfo', {
+  const response = await fetchWithJWTRefresh('/api?type=getUserInfo', {
     method: 'GET',
     headers: { 'Accept': 'application/json' }
   });
@@ -115,7 +113,7 @@ async function loginGuestUser() {
     const data = new FormData(form);
     const alias = data.get('alias') as string;
     console.log('Creating guest account with alias:', alias);
-    const response = await fetch('/api', {
+    const response = await fetchWithJWTRefresh('/api', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

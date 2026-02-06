@@ -28,7 +28,21 @@ function base64UrlDecode(str: string): string {
   return Buffer.from(str, 'base64').toString('utf8');
 }
 
-function verifyAndDecodeJWT(token: string, secret: string): DecodedJWT {
+function base64UrlEncode(obj: Record<string, unknown>): string {
+  function stableStringify(o: unknown): string {
+    if (o === null || typeof o !== 'object') return JSON.stringify(o);
+    if (Array.isArray(o)) return '[' + o.map(stableStringify).join(',') + ']';
+    const obj_cast = o as Record<string, unknown>;
+    return '{' + Object.keys(obj_cast).sort().map(k => JSON.stringify(k) + ':' + stableStringify(obj_cast[k])).join(',') + '}';
+  }
+  return Buffer.from(stableStringify(obj))
+    .toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+export function verifyAndDecodeJWT(token: string, secret: string): DecodedJWT {
   const parts = token.split('.');
   if (parts.length !== 3) {
     throw new Error('Invalid JWT format');
@@ -76,29 +90,15 @@ export function decodeJWT(token: string, secret: string): JWTPayload | null {
   }
 }
 
-export function generateJWT(userId: number, secret: string): string {
+export function generateJWT(userId: number, secret: string, expiresInSeconds: number): string {
   const header = { alg: 'HS256', typ: 'JWT' };
 
   const currentTime = Math.floor(Date.now() / 1000);
   const payload: JWTPayload = {
     sub: userId,
     iat: currentTime,
-    exp: currentTime + 600, // 10 minutes
+    exp: currentTime + expiresInSeconds,
   };
-
-  function base64UrlEncode(obj: Record<string, unknown>): string {
-    function stableStringify(o: unknown): string {
-      if (o === null || typeof o !== 'object') return JSON.stringify(o);
-      if (Array.isArray(o)) return '[' + o.map(stableStringify).join(',') + ']';
-      const obj_cast = o as Record<string, unknown>;
-      return '{' + Object.keys(obj_cast).sort().map(k => JSON.stringify(k) + ':' + stableStringify(obj_cast[k])).join(',') + '}';
-    }
-    return Buffer.from(stableStringify(obj))
-      .toString('base64')
-      .replace(/=/g, '')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_');
-  }
 
   const encodedHeader = base64UrlEncode(header);
   const encodedPayload = base64UrlEncode(payload as Record<string, unknown>);
@@ -114,5 +114,3 @@ export function generateJWT(userId: number, secret: string): string {
 
   return `${signatureBase}.${signature}`;
 }
-
-export { verifyAndDecodeJWT };

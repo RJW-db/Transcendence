@@ -7,6 +7,7 @@ import { registerUser } from '../../login/registerLogic';
 import { createOauthUser } from '../../login/auth';
 
 
+
 let currentSecret: string = '';
 
 export function validateEmail(email: string): boolean {

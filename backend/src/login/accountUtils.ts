@@ -1,8 +1,7 @@
-import {FastifyInstance, FastifyReply} from 'fastify';
-
+import { FastifyInstance, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-
 import { randomUUID } from "crypto";
+import { generateJWT, JWT_SECRET } from './jsonWebToken';
 
 
 export async function getGoogleUserInfo(token: string, fastify: FastifyInstance, reply: FastifyReply): Promise<{ email: string; name: string } | null> {
@@ -21,29 +20,25 @@ export async function getGoogleUserInfo(token: string, fastify: FastifyInstance,
     return userInfo;
 }
 
+export async function generateCookie(userId: number, prisma: PrismaClient, reply: FastifyReply, fastify: FastifyInstance): Promise<boolean> {
+  const sessionId = randomUUID();
+  const sessionJWT = generateJWT(userId, JWT_SECRET, 86400 * 7); // 7 days
 
-export async function generateCookie(userId : number, prisma: PrismaClient, reply: FastifyReply, fastify: FastifyInstance) : Promise<any> {
-      const sessionId : string = randomUUID();
+  try {
+    await prisma.cookie.create({
+      data: {
+        UserID: userId,
+        CookieValue: sessionId,
+      },
+    });
 
-      reply.setCookie('sessionId', sessionId, {
-          httpOnly: true, // js cannot access this cookie for security reasons
-          path: '/', 
-          secure: true,
-          // secure: process.env.NODE_ENV === 'production', // Send only over HTTPS unless localhost for production
-          sameSite: 'lax', // Protects against CSRF
-          maxAge: 24 * 60 * 60 * 7 // Expire after 7 days (in seconds)
-      });
-      const dbCookie = await prisma.cookie.create({
-        data: {
-          UserID: userId,
-          CookieValue: sessionId
-        },
-      });
-      if (!dbCookie) {
-        fastify.log.error(`Failed to create cookie for user ID: ${userId}`);
-        reply.status(500).send({ message: 'Failed to create cookie session, you are now not logged in' });
-        return;
-      }
-      fastify.log.info(`Created cookie in DB for user ID: ${userId} with sessionId: ${sessionId}`);
-      return dbCookie;
+    reply.cookie('sessionId', sessionId, { maxAge: 86400000 * 7, httpOnly: true });
+    reply.cookie('auth', sessionJWT, { maxAge: 86400000 * 7, httpOnly: true });
+
+    fastify.log.info(`Created cookie in DB for user ID: ${userId} with sessionId: ${sessionId}`);
+    return true;
+  } catch (error) {
+    fastify.log.error(`Failed to create cookie: ${error}`);
+    return false;
+  }
 }
