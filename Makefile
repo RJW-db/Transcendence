@@ -1,7 +1,7 @@
 
 all: build up
 
-build: ngrok_install ngrok
+build: setup-ngrok ngrok
 	docker compose build
 
 up:
@@ -10,12 +10,12 @@ up:
 down: kill-ngrok
 	docker compose down
 
-db-rm:
-	@echo "Resetting database..."
-	rm -rf backend/prisma/database/
-
-ngrok_install:
-	./setup_ngrok.sh
+setup-ngrok:
+	@if [ ! -f ./node_modules/.bin/ngrok ]; then \
+		echo "Installing ngrok..."; \
+		npm install ngrok; \
+	fi
+	./node_modules/.bin/ngrok config add-authtoken $$(sed -n 's/^NGROK_AUTHTOKEN=//p' .env)
 
 ngrok:
 	@if [ ! -f .env ]; then \
@@ -47,6 +47,10 @@ kill-ngrok:
 log:
 	docker-compose logs -f
 
+db-rm:
+	@echo "Resetting database..."
+	rm -rf backend/prisma/database/
+
 clean: kill-ngrok
 	docker compose down --volumes
 	rm -rf ./backend/data
@@ -59,7 +63,10 @@ clean: kill-ngrok
 	rm -rf ./backend/package-lock.json
 	rm -rf ./frontend/package-lock.json
 		
-allclean: clean
+fclean: clean
+
+allclean: fclean db-rm
+
 # Stop and remove all containers, networks, and volumes defined in your compose file
 	docker compose down -v
 # If you want to remove images as well
@@ -85,4 +92,5 @@ nodeV:
 # npm run dev
 
 re: down all
-.PHONY: all build up down ngrok_install ngrok ngrok-url kill-ngrok clean allclean nodeV re
+
+.PHONY: all build up down setup-ngrok ngrok ngrok-url kill-ngrok log db-rm clean fclean allclean nodeV re

@@ -3,9 +3,12 @@ services:
   frontend:
     # image: node:20-alpine # Use the official, lightweight Nginx image
     build:
-      context: ./frontend
+      context: .
+      dockerfile: ./frontend/Dockerfile
     working_dir: /app
     user: root
+    environment:
+      - NGROK_SITE=${NGROK_SITE}
     volumes:
       - ./frontend/html:/app/html
       # - ./frontend:/app

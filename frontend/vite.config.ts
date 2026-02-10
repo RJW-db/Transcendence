@@ -3,14 +3,16 @@ import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import FullReload from 'vite-plugin-full-reload';
 
+const ngrokDomain = process.env.NGROK_SITE 
+  ? process.env.NGROK_SITE.replace(/https?:\/\//, '') 
+  : undefined;
+
 export default defineConfig({
   root: './',
   server: {
     port: 5173,
     host: '0.0.0.0',
-    allowedHosts: [
-    'kanesha-surmisable-unintrudingly.ngrok-free.dev'
-	],
+    allowedHosts: ngrokDomain ? [ngrokDomain] : [],
     proxy: {
       '/ws': {
         target: 'ws://backend:3000',
