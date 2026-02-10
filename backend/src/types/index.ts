@@ -9,12 +9,12 @@ import { TournamentManager } from '../engine/tournamentManager';
 // ========================================================
 
 export interface DirectMessagePayload {
-  receiverId: number;
+  receiverID: number;
   message: string;
 }
 
 export interface IncomingDirectMessage {
-  senderId: number;
+  senderID: number;
   message: string;
 }
 
@@ -23,6 +23,7 @@ export interface ServerToClientEvents {
   notification: (msg: string) => void;
   gameState: (msg: any) => void;
   directMessage: (msg: IncomingDirectMessage) => void;
+  unreadMessages: (msgs: IncomingDirectMessage[]) => void;
   // Add other events here
 }
 
@@ -36,6 +37,7 @@ export interface ClientToServerEvents {
   startTournament: () => void;
   leaveTournament: () => void;
   sendDirectMessage: (msg: DirectMessagePayload) => void;
+  loadUnreadMessages: () => void;
   // Add other events here
 }
 

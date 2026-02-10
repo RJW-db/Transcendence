@@ -35,6 +35,33 @@ path: '/ws'
 let dataid = 1;
 //console.log("client .size is ", clients.size);
 
+async function register() {
+
+	while (dataid <= 20) {
+		let name = `user${dataid}`
+		let mail = `${name}@gmail.com`
+		let user = await prisma.user.findFirst({
+			where: {Alias: name}
+		})
+		if (!user) {
+			user = await prisma.user.create({
+				data: {
+					Alias: name,
+					Email: mail,
+					Password: `${dataid}`,
+					Online: true,
+					CreationDate: new Date()
+				}
+			})
+		}
+		if (user)
+			console.log(`${user.Alias}`)
+		dataid++;
+	}
+	dataid = 1;
+}
+register();
+
 const gameManager = new GameWorkerManager(io);
 // const tournamentManager = new TournamentManager(gameManager, io);
 
@@ -156,16 +183,16 @@ fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 // Start the server
 const start = async () => {
   try {
-    // Listen on '0.0.0.0' to be accessible from outside the container
-    await fastify.listen({ port: 3000, host: '0.0.0.0' });
-    fastify.log.info(`Server listening on http://0.0.0.0:8080`);
-    fastify.log.info(`WebSocket endpoint: ws://0.0.0.0:8080/ws`);
+	// Listen on '0.0.0.0' to be accessible from outside the container
+	await fastify.listen({ port: 3000, host: '0.0.0.0' });
+	fastify.log.info(`Server listening on http://0.0.0.0:8080`);
+	fastify.log.info(`WebSocket endpoint: ws://0.0.0.0:8080/ws`);
 
 
 
   } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
+	fastify.log.error(err);
+	process.exit(1);
   }
 };
 

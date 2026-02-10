@@ -1,11 +1,6 @@
 import io  from 'socket.io-client';
 import './styles.css';
 
-// Local type for direct messages received from the backend
-interface IncomingDirectMessage {
-	senderId: number;
-	message: string;
-}
 
 const	views = {
 	firstPage: `
@@ -196,15 +191,34 @@ const socket = io ({
 });
 
 
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+
+
+// Local type for direct messages received from the backend
+interface IncomingDirectMessage {
+	senderID: number;
+	message: string;
+}
+
 // Expose for easy manual testing in the browser console
 ;(window as any).sendDM = (receiverId: number, message: string) => {
-	socket.emit('sendDirectMessage', { receiverId, message });
+	socket.emit('sendDirectMessage', { receiverID: receiverId, message });
 };
 
 socket.on('directMessage', (msg: IncomingDirectMessage) => {
 	console.log('Received direct message:', msg);
 });
+
+socket.on('unreadMessages', (msgs: IncomingDirectMessage[]) => {
+	msgs.map( incomingMessage => console.log('Received direct message:', incomingMessage));
+});
+
 // Remove ^^^^ this before final commit
+
+
+
+//||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 
 socket.on('connect', () => {
@@ -212,6 +226,7 @@ socket.on('connect', () => {
 	// Emit an event to the server
 	socket.emit('login', 1);
 	//socket.emit('message', 'Hello from the client!');
+	socket.emit('loadUnreadMessages');
 });
 	socket.on('disconnect', () => {
 	console.log('Disconnected from Socket.IO server.');
