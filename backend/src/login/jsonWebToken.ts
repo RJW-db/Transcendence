@@ -4,6 +4,13 @@ export const JWT_SECRET = process.env.JWT_SECRET || (() => {
   throw new Error('JWT_SECRET environment variable is required');
 })();
 
+export const TOKEN_TIMES = {
+  // Converts minutes/days from .env into milliseconds
+  REGISTRATION_TOKEN_MS: (parseInt(process.env.REGISTRATION_TOKEN_MINUTES ?? "1", 10)) * 60 * 1000,
+  SHORT_LIVED_TOKEN_MS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60 * 1000,
+  REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000,
+};
+
 interface JWTHeader {
   alg: string;
   typ: string;

@@ -2,7 +2,7 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { verifyPassword } from './hashPasswords';
 import { verifyToken } from './TOTP'
-import { JWT_SECRET, generateJWT, verifyJWT, decodeJWT } from './jsonWebToken';
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from './jsonWebToken';
 
 
 export const handleLoginPassword: ApiMessageHandler = async (
@@ -28,8 +28,8 @@ export const handleLoginPassword: ApiMessageHandler = async (
     return;
   }
 
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, 86400 * 7); // 7 days
-  reply.cookie('tempAuth', tmpToken, { maxAge: 86400 * 7 * 1000 }); // 7 days
+  let tmpToken = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
+  reply.cookie('tempAuth', tmpToken, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS });
 
   // Return temporary token so frontend can use it with TOTP
   reply.status(200).send({ message: 'Password verified, please enter 2FA code', tmpToken });

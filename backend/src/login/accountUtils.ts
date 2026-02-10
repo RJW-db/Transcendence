@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from "crypto";
-import { generateJWT, JWT_SECRET } from './jsonWebToken';
+import { generateJWT, JWT_SECRET, TOKEN_TIMES } from './jsonWebToken';
 
 
 export async function getGoogleUserInfo(token: string, fastify: FastifyInstance, reply: FastifyReply): Promise<{ email: string; name: string } | null> {
@@ -22,7 +22,7 @@ export async function getGoogleUserInfo(token: string, fastify: FastifyInstance,
 
 export async function generateCookie(userId: number, prisma: PrismaClient, reply: FastifyReply, fastify: FastifyInstance): Promise<boolean> {
   const sessionId = randomUUID();
-  const sessionJWT = generateJWT(userId, JWT_SECRET, 86400 * 7); // 7 days
+  const sessionJWT = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
 
   try {
     await prisma.cookie.create({
@@ -32,8 +32,8 @@ export async function generateCookie(userId: number, prisma: PrismaClient, reply
       },
     });
 
-    reply.cookie('sessionId', sessionId, { maxAge: 86400000 * 7, httpOnly: true });
-    reply.cookie('auth', sessionJWT, { maxAge: 86400000 * 7, httpOnly: true });
+    reply.cookie('sessionId', sessionId, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS, httpOnly: true });
+    reply.cookie('auth', sessionJWT, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS, httpOnly: true });
 
     fastify.log.info(`Created cookie in DB for user ID: ${userId} with sessionId: ${sessionId}`);
     return true;

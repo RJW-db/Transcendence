@@ -1,3 +1,4 @@
+NGROK_AUTHTOKEN		=	$(shell sed -n 's/^NGROK_AUTHTOKEN=//p' .env)
 
 all: build up
 
@@ -15,7 +16,7 @@ setup-ngrok:
 		echo "Installing ngrok..."; \
 		npm install ngrok; \
 	fi
-	./node_modules/.bin/ngrok config add-authtoken $$(sed -n 's/^NGROK_AUTHTOKEN=//p' .env)
+	@./node_modules/.bin/ngrok config add-authtoken $(NGROK_AUTHTOKEN)
 
 ngrok:
 	@if [ ! -f .env ]; then \
@@ -37,7 +38,7 @@ ngrok:
     fi
 
 ngrok-url:
-	@curl -s http://localhost:4040/api/tunnels | grep -o '"public_url":"[^"]*' | grep -o 'https://[^"]*' || echo "ngrok not running"
+	@sed -n 's/^NGROK_SITE=//p' .env || echo "NGROK_SITE not set"
 
 kill-ngrok:
 	@if pgrep -x ngrok > /dev/null; then \
@@ -66,7 +67,6 @@ clean: kill-ngrok
 fclean: clean
 
 allclean: fclean db-rm
-
 # Stop and remove all containers, networks, and volumes defined in your compose file
 	docker compose down -v
 # If you want to remove images as well

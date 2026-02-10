@@ -2,7 +2,7 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from './hashPasswords';
 import { verifyToken, generateSecret } from './TOTP'
 import { generateCookie } from './accountUtils'
-import { JWT_SECRET, generateJWT, decodeJWT } from './jsonWebToken';
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from './jsonWebToken';
 
 
 export const handleRegister: ApiMessageHandler = async (
@@ -37,8 +37,8 @@ export const handleRegister: ApiMessageHandler = async (
     return;
   }
 
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, 180); // 3 minutes
-  reply.cookie('tempAuth', tmpToken, { maxAge: 180000 }); // 3 minutes
+  let tmpToken = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.REFRESH_TOKEN_MS / 1000);
+  reply.cookie('tempAuth', tmpToken, { maxAge: TOKEN_TIMES.REFRESH_TOKEN_MS });
 
   fastify.log.info(`Registered new user: ${JSON.stringify(user)}`);
   reply.status(200).send({ message: "User registered, please verify 2FA code", tmpToken, userID: user.ID });
