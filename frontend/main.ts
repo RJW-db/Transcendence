@@ -232,7 +232,14 @@ socket.on('connect', () => {
 	// Emit an event to the server
 	socket.emit('login', 1);
 	//socket.emit('message', 'Hello from the client!');
-	socket.emit('loadUnreadMessages');
+	console.log("Requesting unread messages...")
+	socket.emit('loadUnreadMessages', (response) => {
+		if (!response.success) {
+			console.error("Error:", response.error);
+		} else {
+			console.log("Request success");
+		}
+	});
 });
 	socket.on('disconnect', () => {
 	console.log('Disconnected from Socket.IO server.');
