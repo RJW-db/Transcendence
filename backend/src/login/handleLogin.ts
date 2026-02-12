@@ -1,8 +1,8 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
-import { verifyPassword } from './hashPasswords';
-import { verifyToken } from './TOTP'
-import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from './jsonWebToken';
+import { verifyPassword } from '../authentication/hashPasswords';
+import { verifyToken } from '../authentication/TOTP'
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
 
 
 export const handleLoginPassword: ApiMessageHandler = async (

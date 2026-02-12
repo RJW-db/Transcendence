@@ -1,5 +1,5 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
-import {verifyToken, generateSecret} from './TOTP'
+import {verifyToken, generateTOTPsecret} from '../authentication/TOTP'
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 
 export const handleOauthToken: ApiMessageHandler = async (
@@ -9,42 +9,47 @@ export const handleOauthToken: ApiMessageHandler = async (
     fastify,
     reply
 ) => {
-    fastify.log.info(`Handling OAuth token: ${payload.Token}`);
-        fastify.log.info(`Handling OAuth token: ${payload.Token}`);
-     const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        'Authorization': `Bearer ${payload.Token}`
-      }
-    });
-    if (!response.ok) {
-      fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
-      reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
+  fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+      fastify.log.info(`Handling OAuth token: ${payload.Token}`);
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: {
+      'Authorization': `Bearer ${payload.Token}`
+    }
+  });
+
+  if (!response.ok) {
+    fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
+    reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
+    return;
+  }
+
+  const userInfo = await response.json() as { email: string; name: string };
+  if (!userInfo.email || !userInfo.name) {
+    fastify.log.error(`Incomplete user info received:' ${JSON.stringify(userInfo)}`);
+    reply.status(500).send({ message: 'Incomplete user info received from OAuth provider' });
+    return;
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
+  });
+
+  if (user) {
+    if (user.OauthLogin === false) {
+      fastify.log.error(`User exists but is not an OAuth user: ${JSON.stringify(user)}`);
+      reply.status(400).send({ message: 'User exists but is not an OAuth user' });
       return;
     }
-    const userInfo = await response.json() as { email: string; name: string };
-    if (!userInfo.email || !userInfo.name) {
-      fastify.log.error(`Incomplete user info received:' ${JSON.stringify(userInfo)}`);
-      reply.status(500).send({ message: 'Incomplete user info received from OAuth provider' });
-      return;
-    }
-    const user = await prisma.user.findFirst({
-      where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
-    });
-    if (user) {
-      if (user.OauthLogin === false) {
-        fastify.log.error(`User exists but is not an OAuth user: ${JSON.stringify(user)}`);
-        reply.status(400).send({ message: 'User exists but is not an OAuth user' });
-        return;
-      }
-      reply.status(200).send({oauthAccount: true} );
-      return ;
-    }
-    else {
-        const secret = generateSecret();
-        fastify.log.info(`created secret for: ${userInfo.email} secret: ${secret}`);
-        reply.status(200).send({email: userInfo.email, secret2FA : secret});
-        return ;
-    }
+
+    reply.status(200).send({oauthAccount: true} );
+    return ;
+  }
+  else {
+    const secret = generateTOTPsecret();
+    fastify.log.info(`created secret for: ${userInfo.email} secret: ${secret}`);
+    reply.status(200).send({email: userInfo.email, secret2FA : secret});
+    return ;
+  }
 }
 
 export const oauthRegister: ApiMessageHandler = async (  
@@ -55,10 +60,11 @@ export const oauthRegister: ApiMessageHandler = async (
   reply
 
 ) => {
-    const userInfo : { email: string; name: string } | null = await getGoogleUserInfo(payload.Token, fastify, reply);
-    if (!userInfo) {
-        return;
-    }
+  const userInfo : { email: string; name: string } | null = await getGoogleUserInfo(payload.Token, fastify, reply);
+  if (!userInfo) {
+      return;
+  }
+
   const user = await prisma.user.create({
     data: {
       Alias: userInfo.name,
@@ -69,15 +75,18 @@ export const oauthRegister: ApiMessageHandler = async (
       CreationDate: new Date(),
     },
   });
+
   if (!user) {
     fastify.log.info(`failed to Register OAuth user:' ${JSON.stringify(payload)}`);
     reply.status(400).send({ message: "Failed to create OAuth user object" });
     return;
   }
+
   fastify.log.info(`Created new OAuth user: ${JSON.stringify(user)}`);
   const dbCookie = await generateCookie(user.ID, prisma, reply, fastify);
   if (!dbCookie)
       return;
+
   fastify.log.info(`User logged in successfully: ${JSON.stringify(user)}`);
   reply.status(200).send({ message: 'OAuth login successful', user: {email: user.Email, alias: user.Alias, userID: user.ID} });
 }

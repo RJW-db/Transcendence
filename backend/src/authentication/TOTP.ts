@@ -71,9 +71,8 @@ function base32Decode(base32: string): Uint8Array {
   return bytes;
 }
 
-
 // Browser-compatible secret generation
-export function generateSecret(): string {
+export function generateTOTPsecret(): string {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 charset
   const secretLength = 32;
   let secret = '';

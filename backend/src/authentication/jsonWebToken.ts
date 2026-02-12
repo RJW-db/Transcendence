@@ -6,7 +6,6 @@ export const JWT_SECRET = process.env.JWT_SECRET || (() => {
 
 export const TOKEN_TIMES = {
   // Converts minutes/days from .env into milliseconds
-  REGISTRATION_TOKEN_MS: (parseInt(process.env.REGISTRATION_TOKEN_MINUTES ?? "1", 10)) * 60 * 1000,
   SHORT_LIVED_TOKEN_MS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60 * 1000,
   REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000,
 };
@@ -79,15 +78,15 @@ export function verifyAndDecodeJWT(token: string, secret: string): DecodedJWT {
   return { header, payload };
 }
 
-export function verifyJWT(token: string, secret: string): boolean {
-  try {
-    verifyAndDecodeJWT(token, secret);
-    return true;
-  } catch (e) {
-    console.error('JWT verification failed:', (e as Error).message);
-    return false;
-  }
-}
+// export function verifyJWT(token: string, secret: string): boolean {
+//   try {
+//     verifyAndDecodeJWT(token, secret);
+//     return true;
+//   } catch (e) {
+//     console.error('JWT verification failed:', (e as Error).message);
+//     return false;
+//   }
+// }
 
 export function decodeJWT(token: string, secret: string): JWTPayload | null {
   try {

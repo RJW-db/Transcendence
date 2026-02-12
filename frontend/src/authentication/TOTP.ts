@@ -3,20 +3,6 @@ import QRCode from 'qrcode';
 
 console.log('qrcode', QRCode);
 
-// // Browser-compatible secret generation
-// function generateSecret(): string {
-//   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 charset
-//   const secretLength = 32;
-//   let secret = '';
-//   const randomValues = new Uint8Array(secretLength);
-//   crypto.getRandomValues(randomValues);
-  
-//   for (let i = 0; i < secretLength; i++) {
-//     secret += charset[randomValues[i] % charset.length];
-//   }
-//   return secret;
-// }
-
 function generateQRCodeURL(username: string, secret: string): string {
   const serviceName = 'Transcendence';
   const issuer = encodeURIComponent(serviceName);

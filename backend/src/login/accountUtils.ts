@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from "crypto";
-import { generateJWT, JWT_SECRET, TOKEN_TIMES } from './jsonWebToken';
+import { generateJWT, JWT_SECRET, TOKEN_TIMES } from '../authentication/jsonWebToken';
 
 
 export async function getGoogleUserInfo(token: string, fastify: FastifyInstance, reply: FastifyReply): Promise<{ email: string; name: string } | null> {

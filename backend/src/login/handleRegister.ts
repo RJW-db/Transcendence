@@ -1,8 +1,8 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
-import { hashPassword } from './hashPasswords';
-import { verifyToken, generateSecret } from './TOTP'
+import { hashPassword } from '../authentication/hashPasswords';
+import { verifyToken, generateTOTPsecret } from '../authentication/TOTP'
 import { generateCookie } from './accountUtils'
-import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from './jsonWebToken';
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
 
 
 export const handleRegister: ApiMessageHandler = async (
@@ -12,7 +12,6 @@ export const handleRegister: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
-  console.log('=== REGISTER HANDLER STARTED ===');
   if (!payload.Alias || !payload.Email || !payload.Password || !payload.Secret) {
     fastify.log.error(`Incomplete user info received:' ${JSON.stringify(payload)}`);
     reply.status(500).send({ message: 'Incomplete user info received to register account' });
@@ -37,11 +36,8 @@ export const handleRegister: ApiMessageHandler = async (
     return;
   }
 
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.REFRESH_TOKEN_MS / 1000);
-  reply.cookie('tempAuth', tmpToken, { maxAge: TOKEN_TIMES.REFRESH_TOKEN_MS });
-
   fastify.log.info(`Registered new user: ${JSON.stringify(user)}`);
-  reply.status(200).send({ message: "User registered, please verify 2FA code", tmpToken, userID: user.ID });
+  reply.status(200).send({ message: "User registered, please verify 2FA code", userID: user.ID });
 };
 
 export const handleRegisterTotp: ApiMessageHandler = async (
@@ -102,7 +98,7 @@ export const checkAccountExists: ApiMessageHandler = async (
     reply.status(400).send({ message: message });
     return;
   }
-  const secret = generateSecret();
+  const secret = generateTOTPsecret();
   fastify.log.info(`Generated secret for new user: ${secret}`);
   reply.status(200).send({ message: "No accounts with email: " + payload.Email + " or alias: " + payload.Alias + " exist", secret: secret });
 };
