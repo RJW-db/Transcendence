@@ -99,6 +99,8 @@ io.on('connection', (socket: MySocket) => {
 	// socket.data.userId = dataid;
 	socket.data.cookie = 'cookie';
 	dataid++;
+	if (dataid > 2)
+		dataid = 2;
 	gameHandler(ctx);
 	serverHandler(ctx);
 	tournamentHandler(ctx);

@@ -202,8 +202,14 @@ interface IncomingDirectMessage {
 }
 
 // Expose for easy manual testing in the browser console
-;(window as any).sendDM = (receiverId: number, message: string) => {
-	socket.emit('sendDirectMessage', { receiverID: receiverId, message });
+;(window as any).sendDM = (userName: string, message: string) => {
+	socket.emit('sendDirectMessage', { receiverUserName: userName, message }, (response) => {
+		if (!response.success) {
+			console.error("Error:", response.error);
+		} else {
+			console.log("Message send!");
+		}
+	});
 };
 
 socket.on('directMessage', (msg: IncomingDirectMessage) => {
