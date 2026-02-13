@@ -10,4 +10,11 @@ export const serverHandler = ({ io, socket }: SocketContext) => {
 		console.log(`In serverHandler: ${msg}`);
 		// io.emit
 	})
+
+	socket.on('disconnect', () => {
+		console.log(`Socket disconnected: ${socket.id}`);
+		console.log(`userId : ${socket.data.userId}, machId :${socket.data.matchID}`)
+		
+
+	});
 }

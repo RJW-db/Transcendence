@@ -1,9 +1,11 @@
 import { stat } from "fs";
 
 export class PongGame {
-  public id: string;
+  public matchId: number;
+  public roomId: string;
   public p1Id: number; // Store the ID of Player 1
   public p2Id: number; // Store the ID of Player 2
+  public end = false;
 
   public state = {
     ball: { x: 400, y: 300, dx: -2, dy: 2 },
@@ -33,8 +35,9 @@ export class PongGame {
   private isReset = false;
   private paddleChange = false;
 
-  constructor(id: string, p1Id: number, p2Id: number) {
-    this.id = id;
+  constructor(matchId: number, roomId: string, p1Id: number, p2Id: number) {
+    this.matchId = matchId;
+    this.roomId = roomId;
     this.p1Id = p1Id;
     this.p2Id = p2Id;
   }
@@ -67,8 +70,8 @@ export class PongGame {
     this.isReset = true;
     this.state.ball.x = this.xlen/2;
     this.state.ball.y = this.ylen/2;
-    this.state.ball.dx = 3 * player;
-    this.state.ball.dy = Math.random() * 3 - 1.5;
+    this.state.ball.dx = 3 * player / 2;
+    this.state.ball.dy = (Math.random() * 3 - 1.5) / 2;
     // this.state.ball.x = 60;
     // this.state.ball.y = 450;
     // this.state.ball.dx = -0.05;
@@ -250,6 +253,8 @@ export class PongGame {
         this.state.score.p1 += 1;
         this.reset(-1);
       }
+      if (this.state.score.p1 === -1 || this.state.score.p2 === -1)
+        this.end = true;
       return ;
     }
 
@@ -279,7 +284,7 @@ export class PongGame {
       }
       //Updates paddle, limiting top and bottom border, including
       //limit if trapping ball
-      this.state.p1Y += (action === 'up' ? -10 : 10);
+      this.state.p1Y += (action === 'up' ? -5 : 5);
       if (this.state.p1Y > this.ylen - 100 - pLimB)
         this.state.p1Y = this.ylen - 100 - pLimB;
       if (this.state.p1Y < 0 + pLimT)
@@ -293,7 +298,7 @@ export class PongGame {
         else
           pLimT = 2 * this.radb + 1;
       }
-      this.state.p2Y += (action === 'up' ? -10 : 10);
+      this.state.p2Y += (action === 'up' ? -5 : 5);
       if (this.state.p2Y > this.ylen - 100 - pLimB)
         this.state.p2Y = this.ylen - 100 - pLimB;
       if (this.state.p2Y < 0 + pLimT)
