@@ -3,7 +3,7 @@ import argon2 from 'argon2';
 
 export async function hashPassword(password: string): Promise<string> {
     try {
-        const hash = await argon2.hash(password, {
+        const hash: string = await argon2.hash(password, {
             type: argon2.argon2id,
             timeCost: 2,
             memoryCost: 65536,

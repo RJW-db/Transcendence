@@ -148,4 +148,16 @@ CREATE TABLE cookie(
     REFERENCES User (ID)
 );
 
--- End of file.
+-- Table: JWTRefreshToken
+CREATE TABLE JWTRefreshToken (
+    id integer NOT NULL CONSTRAINT JWTRefreshToken_pk PRIMARY KEY AUTOINCREMENT,
+    userId integer NOT NULL,
+    tokenHash text NOT NULL,
+    iat datetime NOT NULL,
+    exp datetime NOT NULL,
+    revoked boolean NOT NULL DEFAULT 0,
+    CONSTRAINT JWTRefreshToken_User_Match FOREIGN KEY (userId)
+    REFERENCES User (ID) ON DELETE CASCADE,
+    CONSTRAINT JWTRefreshToken_User_Unique UNIQUE (userId)
+);
+

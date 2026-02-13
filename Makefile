@@ -1,8 +1,15 @@
-NGROK_AUTHTOKEN		=	$(shell sed -n 's/^NGROK_AUTHTOKEN=//p' .env)
+ifeq (,$(wildcard .env))
+$(error ERROR: .env file not found!)
+endif
+
+-include .env
+export
 
 all: build up
+	@sleep 0.5
+	@printf "\nApplication is running!\n  Local:  http://localhost:8080\n  Online: %s\n\n" "$(NGROK_SITE)"
 
-build: setup-ngrok ngrok
+build: ngrok
 	docker compose build
 
 up:
@@ -18,27 +25,18 @@ setup-ngrok:
 	fi
 	@./node_modules/.bin/ngrok config add-authtoken $(NGROK_AUTHTOKEN)
 
-ngrok:
-	@if [ ! -f .env ]; then \
-		echo "ERROR: .env file not found!"; \
-		exit 1; \
+ngrok: setup-ngrok
+	@if ! pgrep -x ngrok > /dev/null; then \
+		echo "Starting ngrok tunnel on port 8080..."; \
+		./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 & \
+		sleep 2; \
+		echo "ngrok started in background"; \
+		echo "Check status: http://localhost:4040"; \
 	fi
-
-	@if pgrep -x ngrok > /dev/null; then \
-        echo "ngrok is already running"; \
-        echo "Current tunnel:"; \
-        make ngrok-url; \
-    else \
-        echo "Starting ngrok tunnel on port 8080..."; \
-        ./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 & \
-        sleep 2; \
-        echo "ngrok started in background"; \
-        echo "Check status: http://localhost:4040"; \
-        make ngrok-url; \
-    fi
+	@printf "Tunnel URL: %s\n" "$(NGROK_SITE)"
 
 ngrok-url:
-	@sed -n 's/^NGROK_SITE=//p' .env || echo "NGROK_SITE not set"
+	@printf "ngrok URL: %s\n" "$(NGROK_SITE)"
 
 kill-ngrok:
 	@if pgrep -x ngrok > /dev/null; then \

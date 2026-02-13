@@ -11,6 +11,7 @@ model User {
   ID             Int      @id @default(autoincrement())
   Alias          String   @unique
   Email          String   @unique
+  RefreshToken   JWTRefreshToken?
   Secret2FA      String
   Password       String?
   OauthLogin     Boolean @default(false)
@@ -144,4 +145,15 @@ model Cookie {
   CookieValue String @id
   UserID      Int
   User        User   @relation(fields: [UserID], references: [ID])
+}
+
+model JWTRefreshToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String
+  iat       DateTime
+  exp       DateTime
+  revoked   Boolean  @default(false)
+  userId    Int      @unique
+
+  user      User     @relation(fields: [userId], references: [ID], onDelete: Cascade)
 }
