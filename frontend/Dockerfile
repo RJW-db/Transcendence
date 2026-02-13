@@ -11,7 +11,7 @@ COPY package*.json ./
 # RUN npm install -g npm@11.6.2
 
 # Install app dependencies
-RUN npm install && npm install vite
+RUN npm install && npm install vite && npm install tailwindcss @tailwindcss/vite
 
 # RUN npm install vite
 

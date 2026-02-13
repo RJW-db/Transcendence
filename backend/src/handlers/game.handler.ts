@@ -20,7 +20,7 @@ export const gameHandler = ({ io, socket, gameManager, db }: SocketContext) => {
 	socket.on('joinGame', async (msg: string) => {
 		//Add users to waiting room
 		socket.join('waitRoom');
-
+		console.log("user joined")
 		//Check if at least 2 people waiting
 		const sockets = await io.in('waitRoom').fetchSockets();
 		if (sockets.length === 2)

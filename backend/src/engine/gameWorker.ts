@@ -5,7 +5,7 @@ import { PongGame } from './pongGame';
 const games = new Map<string, PongGame>();
 
 // === 1. The Game Loop (60 FPS) ===
-const TICK_RATE = 1000 / 60;
+const TICK_RATE = 1000 / 120;
 
 setInterval(() => {
   if (games.size === 0) return;
