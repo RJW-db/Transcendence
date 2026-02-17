@@ -4,7 +4,11 @@ import { Socket } from 'socket.io';
 import { fork, ChildProcess } from 'child_process';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
-import { apimessageHandlers, ApiMessageHandler } from './handlers/messageHandler';
+export const cookie = require('@fastify/cookie');
+import type { FastifyCookieOptions } from '@fastify/cookie'
+
+
+import { apimessageHandlers, ApiMessageHandler } from './handlers/loginHandler';
 import { SocketContext, MyServer, MySocket } from './types';
 import { gameHandler } from './handlers/game.handler';
 import { serverHandler } from './handlers/server.handler';
@@ -16,6 +20,13 @@ import { tournamentHandler } from './handlers/tournamentHandler';
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
 });
+
+// export fastiftCookieOptions
+export const fastifyCookieOptions: FastifyCookieOptions = {
+    secret: process.env.COOKIE_SECRET || 'super-secret-dev-key-change-this', // for cookies signature
+    parseOptions: {}     // options for parsing cookies
+  };
+fastify.register(cookie, fastifyCookieOptions); 
 
 
 // When fastify is ready, initialize Socket.IO
@@ -158,16 +169,29 @@ console.log('Socket.IO initialized');
 
 
 
-
 //fastify.register(async function (fastify: FastifyInstance) {
 fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 	try{
-		const	data = request.body as any;
-		if (data.type) {
-			const	apiHandler = apimessageHandlers[data.type];
-			apiHandler(data.Payload, prisma, fastify, reply);
-		}
-		
+        const	data = request.body as any;
+        console.log('=== API REQUEST RECEIVED ===');
+        console.log('Request body:', JSON.stringify(data));
+        console.log('Type:', data.type);
+        
+        if (data.type) {
+            const	apiHandler = apimessageHandlers[data.type];
+            console.log('Handler found:', !!apiHandler);
+            console.log('Handler name:', apiHandler?.name);
+            
+            if (apiHandler) {
+                apiHandler(data.Payload, request, prisma, fastify, reply);
+            } else {
+                console.log('No handler found for type:', data.type);
+                reply.status(400).send({message: `Unknown request type: ${data.type}`});
+            }
+        } else {
+            console.log('No type field in request body');
+            reply.status(400).send({message: `Missing type field`});
+        }
 	}catch{
 		console.log('faild to parse or no type !')
 		reply.status(400).send({message: `Bad request!`})
