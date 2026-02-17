@@ -47,3 +47,5 @@ export async function generateCookie(userId : number, prisma: PrismaClient, repl
       fastify.log.info(`Created cookie in DB for user ID: ${userId} with sessionId: ${sessionId}`);
       return dbCookie;
 }
+
+  

@@ -42,6 +42,7 @@ export const handleRegister: ApiMessageHandler = async (
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
+  
   reply.status(200).send({ message: "Created new user with email: " + user.Email, user: {email: user.Email, alias: user.Alias, userID: user.ID}});
 }
 
