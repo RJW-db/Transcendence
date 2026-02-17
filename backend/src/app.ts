@@ -11,6 +11,7 @@ import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
+import { ErrorHandler } from './utils/errorHandler';
 
 
 const fastify = Fastify({
@@ -91,7 +92,8 @@ io.on('connection', (socket: MySocket) => {
 		io,
 		socket,
 		gameManager,
-		db: prisma // Assuming you decorated fastify with prisma
+		db: prisma,
+		errorHandler: new ErrorHandler(socket, io, prisma)
 		// tournamentManager
 		// logger: fastify.log,
 	};

@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client'; // Adjust if using a different DB
 import { GameWorkerManager } from '../engine/workerManager';
 import { TournamentManager } from '../engine/tournamentManager';
+import { ErrorHandler } from '../utils/errorHandler';
 // import { Logger } from 'pino';                 // Adjust if using a different Logger
 
 // ========================================================
@@ -66,7 +67,8 @@ export interface SocketContext {
   io: MyServer;
   socket: MySocket;
   gameManager: GameWorkerManager;
-  db: PrismaClient; 
-  //   tournamentManager: TournamentManager;
+  db: PrismaClient;
+  errorHandler: ErrorHandler;
+  // tournamentManager: TournamentManager;
   // logger: Logger;
 }
