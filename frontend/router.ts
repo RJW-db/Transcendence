@@ -2,6 +2,7 @@ import { socket } from './services/socket'
 import { home } from './pages/home';
 import { pong } from './pages/pong';
 import { tournament } from './pages/tournament';
+import { loginPage } from './pages/loginPage';
 import { Navbar } from './pages/navbar';
 
 const	routes: Record<string, () => HTMLElement> = {
@@ -10,6 +11,7 @@ const	routes: Record<string, () => HTMLElement> = {
 	'/matches/ai' : pong,
 	'/matches/local' : pong,
 	'/tournaments' : tournament,
+	'/login' : loginPage,
 }
 
 function handleRoute() {
