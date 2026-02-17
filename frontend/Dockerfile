@@ -4,19 +4,16 @@ FROM node:20-alpine
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or yarn.lock)
-# to install dependencies
-COPY package*.json ./
+# Copy frontend package files for dependency install
+COPY frontend/package*.json ./
 
 # RUN npm install -g npm@11.6.2
 
 # Install app dependencies
 RUN npm install && npm install vite && npm install tailwindcss @tailwindcss/vite
 
-# RUN npm install vite
-
-# Copy the rest of the application source code
-COPY . .
+# Copy the rest of the frontend source code
+COPY frontend/ .
 
 # Build the TypeScript application
 # RUN npm run build

@@ -1,0 +1,2 @@
+export const client_id = '1017664873801-raklnn8mib38hhaqjar66bm45fonuov6.apps.googleusercontent.com';
+export const redirect_uri = 'https://nondeprecatory-hyperexcursively-laverna.ngrok-free.dev/callback/google';

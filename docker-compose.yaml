@@ -3,10 +3,14 @@ services:
   frontend:
     # image: node:20-alpine # Use the official, lightweight Nginx image
     build:
-      context: ./frontend
+      context: .
+      dockerfile: ./frontend/Dockerfile
     working_dir: /app
     user: root
-    # volumes:
+    environment:
+      - NGROK_SITE=${NGROK_SITE}
+    volumes:
+      - ./frontend/html:/app/html
       # - ./frontend:/app
       # - /app/node_modules
     ports:
@@ -43,7 +47,10 @@ services:
     #   timeout: 10s         # Wait up to 10 seconds for the check to respond
     #   retries: 3           # Try 3 times before marking the service as unhealthy
     #   start_period: 30s
-
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_TOKEN_MINUTES=${JWT_ACCESS_TOKEN_MINUTES}
+      - JWT_REFRESH_TOKEN_DAYS=${JWT_REFRESH_TOKEN_DAYS}
     # command: sh -c "apk add --no-cache curl python3 make g++ && npm install && npm run start"
 
 # Define the network at the bottom

@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "ngrok": "^5.0.0-beta.2"
+  },
+  "devDependencies": {
+    "vite-plugin-full-reload": "^1.2.0"
   }
 }
