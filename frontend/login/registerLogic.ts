@@ -12,17 +12,10 @@ let Email = '';
 let Password = '';
 
 export async function registerUser(secret: string, token: string ) {
-    const response = await sendRegisterRequest(secret);
-    const result = await response.json();
-    if (!response.ok) {
-      const errorBox = document.getElementById('registerError');
-      errorBox!.textContent = `Error: ${result.message}`;
-      console.log("error registering:", result.message);
-      return;
-    }
+
 
     // Step 2: verify TOTP with temp token
-    const totpResponse = await sendRegisterTotpRequest(token, result.tmpToken);
+    const totpResponse = await sendRegisterTotpRequest(token);
     const totpResult = await totpResponse.json();
     if (!totpResponse.ok) {
       const errorBox = document.getElementById('registerError');
@@ -38,8 +31,8 @@ export async function registerUser(secret: string, token: string ) {
     window.location.hash = '';
 }
 
-async function sendRegisterRequest(secret: string): Promise<Response> {
-  const response = await fetch('/api', {
+async function sendRegisterRequest(): Promise<Response> {
+  const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -50,14 +43,13 @@ async function sendRegisterRequest(secret: string): Promise<Response> {
         Alias: Alias,
         Email: Email,
         Password: Password,
-        Secret: secret
       }
     }),
   });
   return response;
 }
 
-async function sendRegisterTotpRequest(token: string, tempToken: string): Promise<Response> {
+async function sendRegisterTotpRequest(token: string): Promise<Response> {
   const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
@@ -67,7 +59,6 @@ async function sendRegisterTotpRequest(token: string, tempToken: string): Promis
       type: 'registerTotp',
       Payload: {
         VerifyToken: token,
-        tempToken: tempToken
       }
     }),
   });
@@ -103,18 +94,20 @@ export async function showRegisterPage(): Promise<void> {
     Email = email;
     Password = password;
 
-    const checkRes = await fetchWithJWTRefresh('/api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'checkAccountExists',
-        Payload: { Alias: alias, Email: email },
-      }),
-    });
+    const response = await sendRegisterRequest();
 
-    const checkResult = await checkRes.json();
-    if (!checkRes.ok) {
-      errorBox!.textContent = `Error: ${checkResult.message}`;
+    // const checkRes = await fetchWithJWTRefresh('/api', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     type: 'checkAccountExists',
+    //     Payload: { Alias: alias, Email: email },
+    //   }),
+    // });
+
+    const checkResult = await response.json();
+    if (!response.ok) {
+      errorBox!.textContent = checkResult.message ? `Error: ${checkResult.message}`: 'Error registering account';
       return;
     }
 

@@ -62,6 +62,7 @@ export const handleLoginTotp: ApiMessageHandler = async (
   }
 
   await generateCookie(user.ID, prisma, reply, fastify);
+  reply.clearCookie('tempAuth');
   reply.status(200).send({ message: 'Login successful', user: {email: user.Email, alias: user.Alias, userID: user.ID} });
 };
 
@@ -102,23 +103,7 @@ export const handleLogout: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
-    const sessionId = request.cookies.sessionId;
-    if (!sessionId) {
-        fastify.log.error('No sessionId cookie found for logout');
-        reply.status(400).send({ message: 'failed to delete sessionId cookie' });
-        return;
-    }
-    // Delete the cookie from the database
-    const deletedCookie = await prisma.cookie.deleteMany({
-        where: { CookieValue: sessionId },
-    });
-    if (deletedCookie.count === 0) {
-        fastify.log.error(`No cookie found in DB for sessionId: ${sessionId}`);
-    } else {
-        fastify.log.info(`Deleted cookie from DB for sessionId: ${sessionId}`);
-    }
     // Clear the cookie in the response
-    reply.clearCookie('sessionId');
-    fastify.log.info(`User logged out successfully for sessionId: ${sessionId}`);
+    reply.clearCookie('auth');
     reply.status(200).send({ message: 'Logout successful' });
 };

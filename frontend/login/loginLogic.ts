@@ -91,6 +91,16 @@ async function sendTotpRequest(token2fa: string, tempToken: string): Promise<Res
   return response;
 }
 
+
+function getLoginFormData(form: HTMLFormElement): { email: string; password: string; token2fa: string } {
+  const data = new FormData(form);
+  return {
+    email: data.get('email') as string,
+    password: data.get('password') as string,
+    token2fa: data.get('2faToken') as string,
+  };
+}
+
 async function userLoggedIn(): Promise<boolean> {
   const response = await fetchWithJWTRefresh('/api?type=getUserInfo', {
     method: 'GET',
@@ -101,6 +111,8 @@ async function userLoggedIn(): Promise<boolean> {
   }
   return true;
 }
+
+
 
 async function loginGuestUser() {
   appRoot.innerHTML = guestLoginHtml;

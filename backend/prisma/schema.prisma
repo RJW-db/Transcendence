@@ -18,6 +18,7 @@ model User {
   GuestLogin     Boolean @default(false)
   Online         Boolean @default(true)
   CreationDate   DateTime
+  AccountDeleteTime DateTime?
   GamesWon       Int      @default(0)
   ProfilePicture Bytes?
   BlockedBy      BlockedUser[] @relation("BlockedBy")
@@ -31,7 +32,6 @@ model User {
   matchesAsWinner        Match[]       @relation("Winner")
   MessagesSent   Message[]     @relation("Sender")
   MessagesReceived Message[]   @relation("Receiver")
-  Cookies        Cookie[]
   TournamentUsers TournamentUser[]
 }
 
@@ -139,12 +139,6 @@ model TournamentUser {
   matchesAsWinner      TournamentMatch[] @relation("Winner")
   tournaments          Tournament[] @relation("TournamentParticipants")
   tournamentsAsWinner  Tournament[] @relation("TournamentWinner")
-}
-
-model Cookie {
-  CookieValue String @id
-  UserID      Int
-  User        User   @relation(fields: [UserID], references: [ID])
 }
 
 model JWTRefreshToken {

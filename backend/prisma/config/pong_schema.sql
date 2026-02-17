@@ -135,17 +135,11 @@ CREATE TABLE User (
     GuestLogin boolean NOT NULL DEFAULT 0,
     Online boolean NOT NULL,
     CreationDate datetime NOT NULL,
+    AccountDeleteTime datetime NULL.
     GamesWon integer NOT NULL DEFAULT 0,
     ProfilePicture blob,
     CONSTRAINT Alias UNIQUE (Alias),
     CONSTRAINT Email UNIQUE (Email)
-);
-
-CREATE TABLE cookie(
-    CookieValue text NOT NULL CONSTRAINT Cookie_pk PRIMARY KEY,
-    UserID integer NOT NULL,
-    CONSTRAINT CookieValue FOREIGN KEY (UserID)
-    REFERENCES User (ID)
 );
 
 -- Table: JWTRefreshToken

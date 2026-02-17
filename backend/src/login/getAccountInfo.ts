@@ -1,5 +1,6 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
- 
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
+
 
 
 export const getCurrentLoginInfo: ApiMessageHandler = async (
@@ -10,27 +11,18 @@ export const getCurrentLoginInfo: ApiMessageHandler = async (
   reply
 ) => {
     fastify.log.info(`Handling getUserInfo request`);
-    // Here you would normally authenticate the user using cookies or tokens
-    // For simplicity, we will skip authentication in this example
-    // Fetch user info from the database
-    const sessionId = request.cookies.sessionId;
-    if (!sessionId) {
-        fastify.log.error('No current login found(sessionID missing)');
-        reply.status(401).send({ message: 'No current login found' });
+      const decoded = decodeJWT(payload.tempToken, JWT_SECRET);
+      if (!decoded) {
+        reply.status(401).send({ message: 'Session expired' });
         return;
+      }
+    const userId = decoded.sub;
+    
+    const user = await prisma.user.findUnique({ where: { ID: userId } });
+    if (!user) {
+      reply.status(400).send({ message: 'User not found' });
+      return;
     }
-    fastify.log.info(`Found sessionId cookie: ${sessionId}`);
-    const dbCookie = await prisma.cookie.findUnique({
-        where: { CookieValue: sessionId },
-        include: { User: true },
-    });
-    if (!dbCookie || !dbCookie.User) {
-        fastify.log.error('No current login found(dbCookie missing)');
-        reply.status(401).send({ message: 'No current login found' });
-        return;
-    }
-    fastify.log.info(`Found dbCookie user: ${dbCookie.User}`);
-    const user = dbCookie.User;
     fastify.log.info(`Found user: ${user.Alias}`);
     // Return user info
     reply.status(200).send({
