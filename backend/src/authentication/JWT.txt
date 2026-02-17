@@ -1,0 +1,59 @@
+JWT short lived token.
+1. Client sends: Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+2. Server:
+   - Decode JWT payload → read `iat`, `exp`, `sub` (user id)
+   - Verify signature with JWT_SECRET → tamper-proof?
+   - Check `exp > now()` → not expired?
+   - Check `iat` reasonable (not too old)
+   - Extract `sub` for authorization
+3. If all good → allow request. No DB query!
+
+
+Refresh token
+Refresh token send to the client RAW but with httponly.
+Everytime the client connects to us, we validate the JWT, if it's expired we request the client to send back the response  token which we validate by hashing it.
+
+send refreshToken in 1 msg together with JWT
+POST /auth/login → 200 OK
+
+Response body:
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."  // short-lived JWT
+}
+
+Response headers:
+Set-Cookie: refreshToken=a1b2c3d4...randomRaw; HttpOnly; Secure; SameSite=Strict; Path=/
+
+
+
+model JWTRefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tokenHash String   // SHA256 of random refresh token [web:104][web:112]
+  iat       DateTime // created_at
+  exp       DateTime // expires_at
+  revoked   Boolean  @default(false)
+  
+  user      User     @relation(fields: [userId], references: [ID], onDelete: Cascade)
+  
+  @@unique([userId, tokenHash])  // prevent duplicates
+  @@index([userId])              // fast queries per user
+}
+
+// Issue
+const rawToken = crypto.randomBytes(32).toString('hex');
+const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+await prisma.refreshToken.create({
+  data: { userId: user.ID, tokenHash: hash, iat: new Date(), exp: new Date(Date.now() + 7*24*60*60*1000), }
+});
+
+// Refresh
+const clientToken = req.body.refreshToken;
+const hash = crypto.createHash('sha256').update(clientToken).digest('hex');
+const tokenRecord = await prisma.refreshToken.findFirst({
+  where: { tokenHash: hash, userId: userIdFromJWTorWhatever, revoked: false, exp: { gt: new Date() } }
+});
+if (tokenRecord) {
+  await prisma.refreshToken.update({ where: { id: tokenRecord.id }, data: { revoked: true } });
+  // issue new tokens
+}

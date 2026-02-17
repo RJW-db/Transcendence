@@ -13,8 +13,6 @@ RUN apk update && \
     apk add sqlite && \
     npm install
 
-#RUN export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-
 # Don't copy the entire prisma folder because of the database file
 COPY prisma/schema.prisma ./prisma/
 COPY prisma/config/pong_schema.sql ./prisma/config/

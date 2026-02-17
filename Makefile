@@ -1,41 +1,54 @@
+ifeq (,$(wildcard .env))
+$(error ERROR: .env file not found!)
+endif
+
+-include .env
+export
 
 all: build up
+	@sleep 0.5
+	@printf "\nApplication is running!\n  Local:  http://localhost:8080\n  Online: %s\n\n" "$(NGROK_SITE)"
 
-build: ngrok_install ngrok
+build: ngrok
 	docker compose build
 
 up:
 	docker compose up -d
 
-down:
+down: kill-ngrok
 	docker compose down
 
-db-rm:
-	@echo "Resetting database..."
-	rm -rf backend/prisma/database/
-
-ngrok_install:
-	./setup_ngrok.sh
-
-ngrok: kill-ngrok
-	@if [ ! -f .env ]; then \
-		echo "ERROR: .env file not found!"; \
-		exit 1; \
+setup-ngrok:
+	@if [ ! -f ./node_modules/.bin/ngrok ]; then \
+		echo "Installing ngrok..."; \
+		npm install ngrok; \
 	fi
-	@echo "Starting ngrok tunnel on port 8080..."
-	@./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 &
-	@sleep 2
-	@echo "ngrok started in background"
-	@echo "Check status: http://localhost:4040"
-	@make ngrok-url
+	@./node_modules/.bin/ngrok config add-authtoken $(NGROK_AUTHTOKEN)
+
+ngrok: setup-ngrok
+	@if ! pgrep -x ngrok > /dev/null; then \
+		echo "Starting ngrok tunnel on port 8080..."; \
+		./node_modules/.bin/ngrok http 8080 > /dev/null 2>&1 & \
+		sleep 2; \
+		echo "ngrok started in background"; \
+		echo "Check status: http://localhost:4040"; \
+	fi
+	@printf "Tunnel URL: %s\n" "$(NGROK_SITE)"
 
 ngrok-url:
-	@curl -s http://localhost:4040/api/tunnels | grep -o '"public_url":"[^"]*' | grep -o 'https://[^"]*' || echo "ngrok not running"
+	@printf "ngrok URL: %s\n" "$(NGROK_SITE)"
 
 kill-ngrok:
 	@if pgrep -x ngrok > /dev/null; then \
 		pkill ngrok && echo "ngrok killed"; \
 	fi
+
+log:
+	docker-compose logs -f
+
+db-rm:
+	@echo "Resetting database..."
+	rm -rf backend/prisma/database/
 
 clean: kill-ngrok
 	docker compose down --volumes
@@ -49,7 +62,9 @@ clean: kill-ngrok
 	rm -rf ./backend/package-lock.json
 	rm -rf ./frontend/package-lock.json
 		
-allclean: clean
+fclean: clean
+
+allclean: fclean db-rm
 # Stop and remove all containers, networks, and volumes defined in your compose file
 	docker compose down -v
 # If you want to remove images as well
@@ -75,4 +90,5 @@ nodeV:
 # npm run dev
 
 re: down all
-.PHONY: all build up down ngrok_install ngrok ngrok-url kill-ngrok clean allclean nodeV re
+
+.PHONY: all build up down setup-ngrok ngrok ngrok-url kill-ngrok log db-rm clean fclean allclean nodeV re

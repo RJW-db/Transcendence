@@ -1,0 +1,71 @@
+validateAuthToken.ts created,
+needs importing each backend file when a client uses a http method,
+validating the exp(eriation) date
+
+
+Below explanation of usage JWT
+
+
+
+1 Client calls protected API with access JWT
+
+2 Server sees exp expired
+  → Server returns 401 Unauthorized (token_expired)
+
+3 Client calls:
+  POST /auth/refresh
+  (with refresh token via cookie or header)
+
+4 Server validates refresh token
+  If valid:
+  → Server returns new access JWT
+  → (Optionally rotate refresh token)
+
+5 Client retries original request with new JWT
+  If refresh token is invalid/expired:
+  → Server returns 401
+  → Client must login again
+
+
+Details for the steps:
+step 2:
+  Return HTTP 401 Unauthorized
+  Include machine-readable error:
+  JSON body: { "error": "token_expired" }
+  or header: WWW-Authenticate: Bearer error="invalid_token", error_description="token_expired"
+
+  ❌ Server should NOT:
+  Redirect
+  Call /auth/refresh
+  Return new token
+  Trigger refresh implicitly
+
+
+Step 3 — Client behavior (not HTML by default)
+  If this is a browser SPA / JS client
+  Your frontend code should:
+
+  Pseudocode:
+  if (response.status === 401 && error === "token_expired") {
+      await fetch("/auth/refresh", { method: "POST", credentials: "include" });
+      retryOriginalRequest();
+  }
+
+  So:
+  JS handles refresh
+  Not HTML
+  Not server
+
+
+
+[Client HTML/JS already loaded] 
+       |
+   API request with expired JWT
+       |
+   Server returns 401 token_expired
+       |
+   Your client JS detects 401 → POST /auth/refresh
+       |
+   Server validates refresh token → returns new access JWT
+       |
+   Client retries original request with new JWT
