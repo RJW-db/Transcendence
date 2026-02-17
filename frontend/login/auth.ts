@@ -20,9 +20,7 @@ export function oauthSignIn() {
   console.log("URL Params:", urlParams.toString());
   const fullUrl = oauth2Endpoint + '?' + urlParams.toString();
   console.log("Opening OAuth URL:", fullUrl);
-  // Add form to page and submit it to open the OAuth 2.0 endpoint.
-  window.open(fullUrl);
-  window.location.hash = '#'
+  window.location.href = fullUrl;
 }
 
 let accessToken = "";
@@ -106,7 +104,11 @@ async function oauthLogin() {
     const result = await response.json();
     if (response.ok) {
       // window.close();
-      window.location.href = '/';
+      localStorage.setItem("userEmail", result.user.email);
+      localStorage.setItem("userAlias", result.user.alias);
+      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("guestUser", "false");
+      window.location.hash = '';
       return;
     }
     if (!response.ok) {
@@ -161,7 +163,11 @@ export async function createOauthUser(secret: string, loginToken: string)
     {
       console.log("OAuth user created successfully");
       alert("OAuth user created successfully");
-      window.close();
+      localStorage.setItem("userEmail", result.user.email);
+      localStorage.setItem("userAlias", result.user.alias);
+      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("guestUser", "false");
+      window.location.hash = '';
     }
 
 }

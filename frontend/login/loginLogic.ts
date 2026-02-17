@@ -136,6 +136,10 @@ async function loginGuestUser() {
     }
     else {
       console.log('Guest account created successfully:', result.message);
+      localStorage.setItem("userEmail", result.user.email);
+      localStorage.setItem("userAlias", result.user.alias);
+      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("guestUser", "true");
       window.location.hash = '';
     }
   });
