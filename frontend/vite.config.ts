@@ -8,8 +8,11 @@ const ngrokDomain = process.env.NGROK_SITE
   : undefined;
 
 export default defineConfig({
-  plugins: [tailwindcss()],
   root: './',
+  plugins: [
+    tailwindcss(),
+    FullReload(["./html/**/*.html"]),
+  ],
   server: {
     port: 5173,
     host: '0.0.0.0',
@@ -28,10 +31,6 @@ export default defineConfig({
       // Watch for changes in the html directory and trigger full reload
       ignored: ['!**/html/**'],
     },
-  },
-  plugins: [
-    tailwindcss(),
-    FullReload(["./html/**/*.html"]),
-  ]
+  }
 });
 

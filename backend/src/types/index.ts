@@ -13,6 +13,7 @@ export interface ServerToClientEvents {
   notification: (msg: string) => void;
   gameState: (msg: any) => void;
   finished: (msg: any) => void;
+  error: (data: { message: string; context?: string; timestamp: Date }) => void;
   // Add other events here
 }
 
