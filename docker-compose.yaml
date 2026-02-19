@@ -28,6 +28,7 @@ services:
       context: ./backend
     working_dir: /app
     user: root
+    stop_grace_period: 15s  # Allow 15 seconds for graceful shutdown
     volumes:
     #   # Map a new 'backend' folder on your computer into the container
     #   # - ./backend:/app

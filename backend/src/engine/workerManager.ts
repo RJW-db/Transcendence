@@ -67,4 +67,25 @@ export class GameWorkerManager {
   handleInput(roomId: string, player: number, action: 'up' | 'down') {
     this.worker.postMessage({ type: 'INPUT', roomId, player, action });
   }
+
+  async shutdown(): Promise<void> {
+    console.log('Shutting down game worker...');
+    
+    return new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        console.log('Force terminating worker thread');
+        this.worker.terminate();
+        resolve();
+      }, 5000); // 5 second timeout
+
+      // Tell the worker to gracefully shut down
+      this.worker.postMessage({ type: 'SHUTDOWN' });
+      
+      this.worker.on('exit', (code) => {
+        clearTimeout(timeout);
+        console.log(`Worker thread exited with code ${code}`);
+        resolve();
+      });
+    });
+  }
 }

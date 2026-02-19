@@ -1,6 +1,7 @@
 // import io  from 'socket.io-client';
 import './services/socket';
 import './styles.css';
+import { initDirectMessages } from './services/directMessages';
 
 import { Navbar } from './pages/navbar'
 // import { PongPage } from './pages/pong';
@@ -23,6 +24,7 @@ function booststrap() {
 	appRoot.appendChild(pageContent);
 	
 	initRouter();
+	initDirectMessages();
 }
 
 booststrap();

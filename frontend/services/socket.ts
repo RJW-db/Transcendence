@@ -10,6 +10,14 @@ socket.on('connect', () => {
 	console.log('Connected to Socket.IO server!');
 	// Emit an event to the server
 	socket.emit('login', 1);
+	console.log("Requesting unread messages...");
+	socket.emit('loadUnreadMessages', (response) => {
+		if (!response.success) {
+			console.error("Error:", response.error);
+		} else {
+			console.log("Request success");
+		}
+	});
 	//socket.emit('message', 'Hello from the client!');
 });
 
