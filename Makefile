@@ -6,7 +6,7 @@ endif
 export
 
 all: build up
-	@sleep 0.5
+	@sleep 2
 	@printf "\nApplication is running!\n  Local:  http://localhost:8080\n  Online: %s\n\n" "$(NGROK_SITE)"
 
 build: ngrok
@@ -23,7 +23,9 @@ setup-ngrok:
 		echo "Installing ngrok..."; \
 		npm install ngrok; \
 	fi
-	@./node_modules/.bin/ngrok config add-authtoken $(NGROK_AUTHTOKEN)
+	@if [ -n "$(NGROK_AUTHTOKEN)" ]; then \
+		./node_modules/.bin/ngrok config add-authtoken $(NGROK_AUTHTOKEN); \
+	fi
 
 ngrok: setup-ngrok
 	@if ! pgrep -x ngrok > /dev/null; then \
@@ -44,7 +46,7 @@ kill-ngrok:
 	fi
 
 log:
-	docker-compose logs -f
+	docker compose logs -f
 
 db-rm:
 	@echo "Resetting database..."

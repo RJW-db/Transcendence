@@ -61,7 +61,6 @@ async function register() {
 					Email: mail,
 					Secret2FA: `seed-secret-${dataid}`,
 					Password: `${dataid}`,
-					Secret2FA: '',
 					Online: true,
 					CreationDate: new Date()
 				}

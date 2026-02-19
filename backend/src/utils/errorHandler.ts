@@ -86,7 +86,7 @@ export class ErrorHandler {
     event: string,
     handler: (...args: T) => void | Promise<void>
   ): void {
-    this.socket.on(event, async (...args: T) => {
+    (this.socket as any).on(event, async (...args: T) => {
       try {
         await handler(...args);
       } catch (error) {

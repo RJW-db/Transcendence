@@ -3,6 +3,7 @@ import { hashPassword } from '../authentication/hashPasswords';
 import { verifyToken, generateTOTPsecret } from '../authentication/TOTP'
 import { generateCookie } from './accountUtils'
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
+import { createSafePrisma } from '../utils/prismaHandle';
 
 
 export const handleRegister: ApiMessageHandler = async (
@@ -21,7 +22,11 @@ export const handleRegister: ApiMessageHandler = async (
   const hashedPassword = await hashPassword(payload.Password)
   const secret = generateTOTPsecret();
 
-  const user = await prisma.user.create({
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2002: 'Email or alias already taken'
+  });
+
+  const user = await db.user.create({
     data: {
       Alias: payload.Alias,
       Email: payload.Email,
@@ -33,11 +38,9 @@ export const handleRegister: ApiMessageHandler = async (
       CreationDate: new Date(),
     },
   });
-  if (!user) {
-    fastify.log.info(`failed to Register user:' ${JSON.stringify(payload)}`);
-    reply.status(400).send({ message: "Failed to create user object" });
-    return;
-  }
+
+  if (!user) return; // Error already sent to client
+
   let tmpToken = generateJWT(user.ID, JWT_SECRET, 10);
   reply.cookie('tempAuth', tmpToken);
 
