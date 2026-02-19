@@ -69,13 +69,15 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
+
   const userId = decoded.sub;
-  
-  const user = await prisma.user.findUnique({ where: { ID: userId } });
-  if (!user) {
-    reply.status(400).send({ message: 'User not found' });
-    return;
-  }
+  // Use the safe Prisma wrapper for user lookup
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'User not found'
+  });
+
+  const user = await db.user.findUnique({ where: { ID: userId } });
+  if (!user) return; // Error already sent to client
 
   if (!(await verifyToken(payload.VerifyToken, user.Secret2FA))) {
     fastify.log.error(`Incorrect Token entered for registration`);
@@ -132,7 +134,12 @@ export const createGuestAccount : ApiMessageHandler = async (
   const secret = ''
   const email = payload.Alias + '@guest.account'
   const alias = payload.Alias + '_guest'
-  const user = await prisma.user.create({
+
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2002: 'Guest account already exists'
+  });
+
+  const user = await db.user.create({
     data: {
       Alias: alias,
       Email: email,
@@ -143,11 +150,9 @@ export const createGuestAccount : ApiMessageHandler = async (
       CreationDate: new Date(),
     },
   });
-  if (!user) {
-    fastify.log.error(`Failed to create guest account for alias: ${payload.Alias}`);
-    reply.status(500).send({ message: 'Failed to create guest account' });
-    return;
-  }
+
+  if (!user) return; // Error already sent to client
+
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
