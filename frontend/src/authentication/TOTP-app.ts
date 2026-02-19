@@ -2,9 +2,8 @@ import { generateQRCodeImage, verifyToken } from './TOTP';
 import totpHtml from '../../html/TOTP.html?raw'
 import registerTokenHtml from '../../html/RegisterToken.html?raw'
 
-import { appRoot } from '../../main';
 import { registerUser } from '../../login/registerLogic';
-import { createOauthUser } from '../../login/auth';
+// import { createOauthUser } from '../../login/auth';
 
 
 
@@ -28,8 +27,8 @@ export function validateEmail(email: string): boolean {
   return simpleRegex.test(email);
 }
 
-export async function totpSetup(username: string, oauth: boolean, secret: string): Promise<string> {
-  appRoot.innerHTML = await registerTokenHtml;
+export async function totpSetup(container: HTMLDivElement, username: string, oauth: boolean, secret: string): Promise<string> {
+  container.innerHTML = await registerTokenHtml;
   // const usernameInput = document.getElementById('username-input') as HTMLInputElement;
   // const username = usernameInput.value.trim();
 
@@ -58,10 +57,10 @@ export async function totpSetup(username: string, oauth: boolean, secret: string
 
       const token = tokenInput.value.trim();
       console.log("verify button clicked")
-      if (oauth)
-        createOauthUser(currentSecret, token);
-      else
-        await registerUser(currentSecret, token);
+      // if (oauth)
+      //   createOauthUser(currentSecret, token);
+      // else
+        await registerUser(container,currentSecret, token);
     }
     );
 

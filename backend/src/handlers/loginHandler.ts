@@ -14,7 +14,7 @@ export type ApiMessageHandler = (
 ) => Promise<void> | void;
 
 // import {handleRegister, checkAccountExists, createGuestAccount} from '../login/handleRegister';
-import {handleRegister, handleRegisterTotp, checkAccountExists, createGuestAccount} from '../login/handleRegister';
+import {handleRegister, handleRegisterTotp, createGuestAccount} from '../login/handleRegister';
 import {handleLoginPassword, handleLoginTotp, oauthLogin, handleLogout} from '../login/handleLogin';
 import {handleOauthToken, oauthRegister} from '../login/oauthRegister';
 import { create } from 'node:domain';
@@ -25,7 +25,6 @@ export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'loginUser': handleLoginPassword,
   'verifyTotp': handleLoginTotp,
   'logoutUser': handleLogout,
-  'checkAccountExists': checkAccountExists,
   'oauthToken': handleOauthToken,
   'oauthRegister': oauthRegister,
   'oauthLogin': oauthLogin,

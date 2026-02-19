@@ -58,7 +58,7 @@ export function Navbar() {
               <div class="px-4 py-2 border-b border-slate-800 mb-1">
                 <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Welcome!</p>
               </div>
-              <a href="/login" data-link class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-cyan-400 transition-colors">Sign In</a>
+              <a href="/login" data-link class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-cyan-400 transition-colors">Log In</a>
               <a href="/register" data-link class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-cyan-400 transition-colors">Create Account</a>
             </div>
             <div id="profile-menu" class="hidden absolute right-0 mt-3 w-48 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl py-2 z-50 ring-1 ring-white/5">
@@ -89,7 +89,7 @@ export function Navbar() {
   profileBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     matchesMenu?.classList.add('hidden'); // Close other dropdown
-    if (localStorage.getItem('token') === null)
+    if (localStorage.getItem('userEmail') === null)
     {
       loginMenu?.classList.toggle('hidden');
     }

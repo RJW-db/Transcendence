@@ -22,7 +22,7 @@ export async function fetchWithJWTRefresh(url: string, options: RequestInit = {}
     } else {
       // Refresh failed - logout
       localStorage.clear();
-      window.location.hash = '#login';
+      window.location.href = '/login';
     }
   }
 

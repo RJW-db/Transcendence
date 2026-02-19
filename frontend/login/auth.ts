@@ -2,7 +2,7 @@
 
 import { authtoken } from 'ngrok';
 import oauthverifyPageHtml from '../html/oauthVerifyPage.html?raw';
-import { appRoot } from '../main';
+// import { appRoot } from '../main';
 import { totpSetup } from "../src/authentication/TOTP-app";
 // import {client_id, redirect_uri} from './.env';
 
@@ -108,7 +108,7 @@ async function oauthLogin() {
       localStorage.setItem("userAlias", result.user.alias);
       localStorage.setItem("userId", result.user.userID);
       localStorage.setItem("guestUser", "false");
-      window.location.hash = '';
+      window.location.href = '/';
       return;
     }
     if (!response.ok) {
@@ -167,7 +167,7 @@ export async function createOauthUser(secret: string, loginToken: string)
       localStorage.setItem("userAlias", result.user.alias);
       localStorage.setItem("userId", result.user.userID);
       localStorage.setItem("guestUser", "false");
-      window.location.hash = '';
+      window.location.href = '/';
     }
 
 }

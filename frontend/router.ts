@@ -3,6 +3,7 @@ import { home } from './pages/home';
 import { pong } from './pages/pong';
 import { tournament } from './pages/tournament';
 import { loginPage } from './pages/loginPage';
+import {registerPage} from './pages/registerPage'
 import { Navbar } from './pages/navbar';
 
 const	routes: Record<string, () => HTMLElement> = {
@@ -12,6 +13,7 @@ const	routes: Record<string, () => HTMLElement> = {
 	'/matches/local' : pong,
 	'/tournaments' : tournament,
 	'/login' : loginPage,
+	'/register': registerPage,
 }
 
 async function handleRoute() {

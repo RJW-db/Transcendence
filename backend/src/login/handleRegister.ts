@@ -3,7 +3,22 @@ import { hashPassword } from '../authentication/hashPasswords';
 import { verifyToken, generateTOTPsecret } from '../authentication/TOTP'
 import { generateCookie } from './accountUtils'
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
+import { PrismaClient } from '@prisma/client';
 
+async function  checkAccountExists(alias: string, email: string, prisma : PrismaClient): Promise<boolean> {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { Alias: alias },
+        { Email: email }
+      ]
+    }
+  });
+  if (!user) {
+    return Promise.resolve(false);
+  }
+  return Promise.resolve(true);
+}
 
 export const handleRegister: ApiMessageHandler = async (
   payload: { Alias: string; Email: string; Password: string, Secret: string },
@@ -12,6 +27,12 @@ export const handleRegister: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
+  if (await checkAccountExists(payload.Alias, payload.Email, prisma)) {
+    fastify.log.error(`User already exists: ${payload.Alias}, ${payload.Email}`);
+    reply.status(400).send({ message: 'User already exists' });
+    return;
+  }
+
   if (!payload.Alias || !payload.Email || !payload.Password) {
     fastify.log.error(`Incomplete user info received:' ${JSON.stringify(payload)}`);
     reply.status(500).send({ message: 'Incomplete user info received to register account' });
@@ -38,8 +59,8 @@ export const handleRegister: ApiMessageHandler = async (
     reply.status(400).send({ message: "Failed to create user object" });
     return;
   }
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, 10);
-  reply.cookie('tempAuth', tmpToken);
+  let tmpToken = generateJWT(user.ID, JWT_SECRET, 60);
+  reply.cookie('tempAuth', tmpToken, { maxAge: 60 });
 
 
   fastify.log.info(`Registered new user: ${JSON.stringify(user)}`);
@@ -87,36 +108,6 @@ export const handleRegisterTotp: ApiMessageHandler = async (
   
   reply.status(200).send({ message: "Created new user with email: " + user.Email, user: {email: user.Email, alias: user.Alias, userID: user.ID}});
 }
-
-
-
-
-
-export const checkAccountExists: ApiMessageHandler = async (
-  payload: { Alias: string; Email: string },
-  request,
-  prisma,
-  fastify,
-  reply
-) => {
-  const user = await prisma.user.findFirst({
-    where: { OR: [{ Email: payload.Email }, { Alias: payload.Alias }] }
-  });
-  if (user) {
-    let message = '';
-    if (user.Email == payload.Email && user.Alias == payload.Alias)
-      message = "user with email: " + payload.Email + " and alias: " + payload.Alias + " already exists";
-    else if (user.Email == payload.Email)
-      message = "user with email: " + payload.Email + " already exists";
-    else
-      message = "user with alias: " + payload.Alias + " already exists";
-    reply.status(400).send({ message: message });
-    return;
-  }
-  const secret = generateTOTPsecret();
-  fastify.log.info(`Generated secret for new user: ${secret}`);
-  reply.status(200).send({ message: "No accounts with email: " + payload.Email + " or alias: " + payload.Alias + " exist", secret: secret });
-};
 
 export const createGuestAccount : ApiMessageHandler = async (
   payload: { Alias: string },

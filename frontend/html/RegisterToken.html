@@ -1,24 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Login</title>
-</head>
-<div class="flex items-center justify-center bg-gray-100 dark:bg-black h-screen w-full dark:text-white">
-    <div
-        class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md mx-auto flex flex-col items-center dark:bg-neutral-900">
-        <form method="post" class="w-full flex flex-col gap-4">
-            <div id="qr-code"></div>
-            <p id="secret-text"></p>
-            <h1 class="italic text-2xl font-bold text-center mb-4">VerifyToken</h1>
-            <input id="token-input" type="number" name="token" maxlength="6"
-                class="border rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-body"
-                placeholder="Token">
-            <button id="verify-btn" type="submit"
-                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-1 rounded transition">Register User</button>
-            <p id="registerError" class="text-red-500 text-center"></p>
-        </form>
-    </div>
+<div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md mx-auto flex flex-col items-center dark:bg-neutral-900">
+    <form method="post" class="w-full flex flex-col gap-4">
+        <div id="qr-code"></div>
+        <p id="secret-text"></p>
+        <h1 class="italic text-2xl font-bold text-center mb-4">VerifyToken</h1>
+        <input id="token-input" type="number" name="token" maxlength="6"
+            class="border rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-body"
+            placeholder="Token">
+        <button id="verify-btn" type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-1 rounded transition">Register
+            User</button>
+        <p id="registerError" class="text-red-500 text-center"></p>
+    </form>
 </div>
-
-</html>
