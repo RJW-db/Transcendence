@@ -1,15 +1,22 @@
+
 import { defineConfig } from 'vite';
-import tailwindcss from '@tailwindcss/vite'
+import tailwindcss from '@tailwindcss/vite';
+import FullReload from 'vite-plugin-full-reload';
+
+const ngrokDomain = process.env.NGROK_SITE 
+  ? process.env.NGROK_SITE.replace(/https?:\/\//, '') 
+  : undefined;
 
 export default defineConfig({
-  plugins: [tailwindcss()],
   root: './',
+  plugins: [
+    tailwindcss(),
+    FullReload(["./html/**/*.html"]),
+  ],
   server: {
     port: 5173,
-	host: '0.0.0.0',
-	allowedHosts: [
-    'unconstrued-cayden-nonrealistically.ngrok-free.dev'
-	],
+    host: '0.0.0.0',
+    allowedHosts: ngrokDomain ? [ngrokDomain] : [],
     proxy: {
       '/ws': {
         target: 'ws://backend:3000',
@@ -19,6 +26,11 @@ export default defineConfig({
         target: 'http://backend:3000',
         changeOrigin: true
       }
-    }
+    },
+    watch: {
+      // Watch for changes in the html directory and trigger full reload
+      ignored: ['!**/html/**'],
+    },
   }
 });
+

@@ -8,11 +8,26 @@ import { TournamentManager } from '../engine/tournamentManager';
 // 1. EVENT DEFINITIONS
 // ========================================================
 
+export interface DirectMessagePayload {
+  receiverUserName: string;
+  receiverID: number;
+  message: string;
+}
+
+export interface IncomingDirectMessage {
+  messageID: number;
+  senderID: number;
+  message: string;
+}
+
 export interface ServerToClientEvents {
   chatMessage: (msg: string) => void;
   notification: (msg: string) => void;
   gameState: (msg: any) => void;
   finished: (msg: any) => void;
+  error: (data: { message: string; context?: string; timestamp: Date }) => void;
+  directMessage: (msg: IncomingDirectMessage) => void;
+  unreadMessages: (msgs: IncomingDirectMessage[]) => void;
   // Add other events here
 }
 
@@ -24,6 +39,8 @@ export interface ClientToServerEvents {
   joinGame: (msg: string) => void;
   joinTournament: (msg: string) => void;
   startTournament: (msg: string) => void;
+  sendDirectMessage: (msg: DirectMessagePayload, callback: (response: { success: boolean; error?: string }) => void) => void;
+  loadUnreadMessages: (callback: (response: { success: boolean, error?: string}) => void) => void;
   // Add other events here
 }
 

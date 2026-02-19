@@ -4,18 +4,30 @@ import { Socket } from 'socket.io';
 import { fork, ChildProcess } from 'child_process';
 const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
-import { apimessageHandlers, ApiMessageHandler } from './handlers/messageHandler';
+export const cookie = require('@fastify/cookie');
+import type { FastifyCookieOptions } from '@fastify/cookie'
+
+
+import { apimessageHandlers, ApiMessageHandler } from './handlers/loginHandler';
 import { SocketContext, MyServer, MySocket } from './types';
 import { gameHandler } from './handlers/game.handler';
 import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
+import { directMessageHandler } from './handlers/directMessageHandlers';
 
 
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
 });
+
+// export fastiftCookieOptions
+export const fastifyCookieOptions: FastifyCookieOptions = {
+    secret: process.env.COOKIE_SECRET || 'super-secret-dev-key-change-this', // for cookies signature
+    parseOptions: {}     // options for parsing cookies
+  };
+fastify.register(cookie, fastifyCookieOptions); 
 
 
 // When fastify is ready, initialize Socket.IO
@@ -46,7 +58,9 @@ async function register() {
 				data: {
 					Alias: name,
 					Email: mail,
+					Secret2FA: `seed-secret-${dataid}`,
 					Password: `${dataid}`,
+					Secret2FA: '',
 					Online: true,
 					CreationDate: new Date()
 				}
@@ -101,6 +115,7 @@ io.on('connection', (socket: MySocket) => {
 	gameHandler(ctx);
 	serverHandler(ctx);
 	tournamentHandler(ctx);
+	directMessageHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){
@@ -158,16 +173,29 @@ console.log('Socket.IO initialized');
 
 
 
-
 //fastify.register(async function (fastify: FastifyInstance) {
 fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 	try{
-		const	data = request.body as any;
-		if (data.type) {
-			const	apiHandler = apimessageHandlers[data.type];
-			apiHandler(data.Payload, prisma, fastify, reply);
-		}
-		
+        const	data = request.body as any;
+        console.log('=== API REQUEST RECEIVED ===');
+        console.log('Request body:', JSON.stringify(data));
+        console.log('Type:', data.type);
+        
+        if (data.type) {
+            const	apiHandler = apimessageHandlers[data.type];
+            console.log('Handler found:', !!apiHandler);
+            console.log('Handler name:', apiHandler?.name);
+            
+            if (apiHandler) {
+                apiHandler(data.Payload, request, prisma, fastify, reply);
+            } else {
+                console.log('No handler found for type:', data.type);
+                reply.status(400).send({message: `Unknown request type: ${data.type}`});
+            }
+        } else {
+            console.log('No type field in request body');
+            reply.status(400).send({message: `Missing type field`});
+        }
 	}catch{
 		console.log('faild to parse or no type !')
 		reply.status(400).send({message: `Bad request!`})
@@ -197,3 +225,58 @@ const start = async () => {
 
 start();
 
+// Graceful shutdown handling
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) {
+    fastify.log.info('Shutdown already in progress...');
+    return;
+  }
+  
+  isShuttingDown = true;
+  fastify.log.info(`${signal} received, starting graceful shutdown...`);
+
+  try {
+    // 1. Stop accepting new connections
+    fastify.log.info('Closing server to new connections...');
+    await fastify.close();
+
+    // 2. Disconnect all Socket.IO clients gracefully
+    fastify.log.info('Disconnecting all Socket.IO clients...');
+    const sockets = await io.fetchSockets();
+    for (const socket of sockets) {
+      socket.disconnect(true);
+    }
+    io.close();
+
+    // 3. Shutdown game workers
+    fastify.log.info('Shutting down game workers...');
+    await gameManager.shutdown();
+
+    // 4. Close database connections
+    fastify.log.info('Closing database connections...');
+    await prisma.$disconnect();
+
+    fastify.log.info('Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    fastify.log.error(`Error during shutdown: ${error}`);
+    process.exit(1);
+  }
+}
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Ctrl+C in terminal
+
+// Handle uncaught errors
+process.on('uncaughtException', (error: Error) => {
+  fastify.log.error(`Uncaught Exception: ${error.message} - Stack: ${error.stack}`);
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  fastify.log.error(`Unhandled Rejection - reason: ${reason}`);
+  gracefulShutdown('unhandledRejection');
+});
