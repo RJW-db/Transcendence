@@ -13,7 +13,6 @@ export type ApiMessageHandler = (
   reply: FastifyReply
 ) => Promise<void> | void;
 
-// import {handleRegister, checkAccountExists, createGuestAccount} from '../login/handleRegister';
 import {handleRegister, handleRegisterTotp, createGuestAccount} from '../login/handleRegister';
 import {handleLoginPassword, handleLoginTotp, oauthLogin, handleLogout} from '../login/handleLogin';
 import {handleOauthToken, oauthRegister} from '../login/oauthRegister';

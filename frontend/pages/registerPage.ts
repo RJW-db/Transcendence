@@ -11,6 +11,7 @@ export async function registerPage() {
   form?.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
     registerNewUser(container);
+    return ;
     
   });
     return container;

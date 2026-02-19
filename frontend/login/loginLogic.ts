@@ -76,6 +76,20 @@ function getLoginFormData(form: HTMLFormElement): { email: string; password: str
   };
 }
 
+export async function logoutUser() {
+  const response = await fetch('/api', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      type: 'logoutUser',
+      Payload: {}
+    }),
+  });
+  window.location.href = '/login';
+}
+
 // async function userLoggedIn(): Promise<boolean> {
 //   const response = await fetchWithJWTRefresh('/api?type=getUserInfo', {
 //     method: 'GET',

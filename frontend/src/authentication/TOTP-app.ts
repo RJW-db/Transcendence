@@ -27,7 +27,7 @@ export function validateEmail(email: string): boolean {
   return simpleRegex.test(email);
 }
 
-export async function totpSetup(container: HTMLDivElement, username: string, oauth: boolean, secret: string): Promise<string> {
+export async function totpSetup(container: HTMLDivElement, username: string, oauth: boolean, secret: string){
   container.innerHTML = await registerTokenHtml;
   // const usernameInput = document.getElementById('username-input') as HTMLInputElement;
   // const username = usernameInput.value.trim();
@@ -61,14 +61,13 @@ export async function totpSetup(container: HTMLDivElement, username: string, oau
       //   createOauthUser(currentSecret, token);
       // else
         await registerUser(container,currentSecret, token);
+      return ;
     }
     );
 
-    return secret;
   } catch (err) {
     console.error('Error during setup:', err);
     alert('Error generating QR code. Check console.');
-    return '';
   }
 
 }

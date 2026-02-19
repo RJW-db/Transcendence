@@ -22,6 +22,7 @@ export async function fetchWithJWTRefresh(url: string, options: RequestInit = {}
     } else {
       // Refresh failed - logout
       localStorage.clear();
+      console.log('Session expired. Please log in again hier hier.');
       window.location.href = '/login';
     }
   }

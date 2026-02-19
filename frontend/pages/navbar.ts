@@ -1,4 +1,5 @@
 import { socket } from '../services/socket'
+import { logoutUser } from '../login/loginLogic';
 
 export function Navbar() {
   const nav = document.createElement('nav');
@@ -84,6 +85,7 @@ export function Navbar() {
   const loginMenu = nav.querySelector('#login-menu');
   const matchesBtn = nav.querySelector('#matches-menu-btn');
   const matchesMenu = nav.querySelector('#matches-menu');
+  const logoutBtn = nav.querySelector('#logout-btn');
 
   // Toggle Profile Dropdown
   profileBtn?.addEventListener('click', (e) => {
@@ -94,7 +96,13 @@ export function Navbar() {
       loginMenu?.classList.toggle('hidden');
     }
     else
+    {
       profileMenu?.classList.toggle('hidden');
+      logoutBtn?.addEventListener('click', () => {
+        localStorage.clear();
+        logoutUser();
+      });
+    }
   });
 
   // Toggle Matches Dropdown
