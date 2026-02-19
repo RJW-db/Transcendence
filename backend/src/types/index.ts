@@ -25,6 +25,7 @@ export interface ServerToClientEvents {
   notification: (msg: string) => void;
   gameState: (msg: any) => void;
   finished: (msg: any) => void;
+  error: (data: { message: string; context?: string; timestamp: Date }) => void;
   directMessage: (msg: IncomingDirectMessage) => void;
   unreadMessages: (msgs: IncomingDirectMessage[]) => void;
   // Add other events here
