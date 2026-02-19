@@ -7,7 +7,7 @@ const games = new Map<string, PongGame>();
 // === 1. The Game Loop (60 FPS) ===
 const TICK_RATE = 1000 / 120;
 
-setInterval(() => {
+const intervalId = setInterval(() => {
   if (games.size === 0) return;
 
   const updates: any[] = [];
@@ -52,6 +52,12 @@ if (parentPort) {
         // msg: { roomId, player, action }
         const game = games.get(msg.roomId);
         if (game) game.handleInput(msg.player, msg.action);
+        break;
+
+      case 'SHUTDOWN':
+        console.log('Worker received shutdown signal');
+        clearInterval(intervalId);
+        process.exit(0);
         break;
     }
   });

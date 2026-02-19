@@ -15,6 +15,7 @@ import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
+import { directMessageHandler } from './handlers/directMessageHandlers';
 
 
 const fastify = Fastify({
@@ -57,7 +58,9 @@ async function register() {
 				data: {
 					Alias: name,
 					Email: mail,
+					Secret2FA: `seed-secret-${dataid}`,
 					Password: `${dataid}`,
+					Secret2FA: '',
 					Online: true,
 					CreationDate: new Date()
 				}
@@ -112,6 +115,7 @@ io.on('connection', (socket: MySocket) => {
 	gameHandler(ctx);
 	serverHandler(ctx);
 	tournamentHandler(ctx);
+	directMessageHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){
@@ -221,3 +225,58 @@ const start = async () => {
 
 start();
 
+// Graceful shutdown handling
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) {
+    fastify.log.info('Shutdown already in progress...');
+    return;
+  }
+  
+  isShuttingDown = true;
+  fastify.log.info(`${signal} received, starting graceful shutdown...`);
+
+  try {
+    // 1. Stop accepting new connections
+    fastify.log.info('Closing server to new connections...');
+    await fastify.close();
+
+    // 2. Disconnect all Socket.IO clients gracefully
+    fastify.log.info('Disconnecting all Socket.IO clients...');
+    const sockets = await io.fetchSockets();
+    for (const socket of sockets) {
+      socket.disconnect(true);
+    }
+    io.close();
+
+    // 3. Shutdown game workers
+    fastify.log.info('Shutting down game workers...');
+    await gameManager.shutdown();
+
+    // 4. Close database connections
+    fastify.log.info('Closing database connections...');
+    await prisma.$disconnect();
+
+    fastify.log.info('Graceful shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    fastify.log.error(`Error during shutdown: ${error}`);
+    process.exit(1);
+  }
+}
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Ctrl+C in terminal
+
+// Handle uncaught errors
+process.on('uncaughtException', (error: Error) => {
+  fastify.log.error(`Uncaught Exception: ${error.message} - Stack: ${error.stack}`);
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  fastify.log.error(`Unhandled Rejection - reason: ${reason}`);
+  gracefulShutdown('unhandledRejection');
+});
