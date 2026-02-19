@@ -14,14 +14,14 @@ const	routes: Record<string, () => HTMLElement> = {
 	'/login' : loginPage,
 }
 
-function handleRoute() {
+async function handleRoute() {
 	const path = window.location.pathname;
 	const view = routes[path];
 
 	const container = document.querySelector('#page-content');
 	if (container) {
 		container.innerHTML = ''
-		container.appendChild(view());
+		container.appendChild(await view());
 		if (path === '/matches/player')
 			socket.emit('joinGame', 'Message from client for cookie test')
 

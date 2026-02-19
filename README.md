@@ -28,6 +28,10 @@ Make ngrok in separate tab then just make
    ```bash
    NGROK_AUTHTOKEN=your_authtoken_here
    NGROK_SITE=<your-custom-domain.ngrok-free.dev>
+   JWT_SECRET=yourSecret
+   TOTP_ENCRYPTION_KEY=yourEncryptionKey
+   JWT_ACCESS_TOKEN_MINUTES=
+   JWT_REFRESH_TOKEN_DAYS=
    ```
 
 4. **Build and run:**
