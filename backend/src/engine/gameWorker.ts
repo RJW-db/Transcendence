@@ -7,6 +7,10 @@ const games = new Map<string, PongGame>();
 // === 1. The Game Loop (60 FPS) ===
 const TICK_RATE = 1000 / 120;
 
+
+//OPTIONAL: instead of creating an array each frame and creating an 
+//object for each gamestateupdate, consider creating a global map
+//and just update the value and pass the map to the parent
 setInterval(() => {
   if (games.size === 0) return;
 

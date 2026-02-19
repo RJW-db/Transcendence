@@ -1,5 +1,3 @@
-import { stat } from "fs";
-
 export class PongGame {
   public matchId: number;
   public roomId: string;
