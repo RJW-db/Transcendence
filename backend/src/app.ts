@@ -15,6 +15,7 @@ import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
+import { directMessageHandler } from './handlers/directMessageHandlers';
 
 
 const fastify = Fastify({
@@ -57,6 +58,7 @@ async function register() {
 				data: {
 					Alias: name,
 					Email: mail,
+					Secret2FA: `seed-secret-${dataid}`,
 					Password: `${dataid}`,
 					Secret2FA: '',
 					Online: true,
@@ -113,6 +115,7 @@ io.on('connection', (socket: MySocket) => {
 	gameHandler(ctx);
 	serverHandler(ctx);
 	tournamentHandler(ctx);
+	directMessageHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){
