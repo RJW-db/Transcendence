@@ -16,6 +16,7 @@ import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
+import { socketError } from './utils/socketError';
 
 
 const fastify = Fastify({
@@ -60,7 +61,6 @@ async function register() {
 					Email: mail,
 					Secret2FA: `seed-secret-${dataid}`,
 					Password: `${dataid}`,
-					Secret2FA: '',
 					Online: true,
 					CreationDate: new Date()
 				}
@@ -78,6 +78,7 @@ const gameManager = new GameWorkerManager(io, prisma);
 // const tournamentManager = new TournamentManager(gameManager, io);
 
 io.on('connection', (socket: MySocket) => {
+	socketError(socket);
 	console.log(`Socket connected: ${socket.id}`);
 	socket.data.userId = dataid;
 	socket.data.matchID = null;

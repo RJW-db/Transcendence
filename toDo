@@ -10,3 +10,7 @@ how to manage single page application routing?
 
 implement proper storing of login state in browser
 
+connection errors catch on socketio error messages
+logic errors in backend catch on socket error wrapper and listen for
+callbacks in frontend
+frontend errors wrap around router, if fatal error emit to backend

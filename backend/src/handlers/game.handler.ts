@@ -18,6 +18,7 @@ export const gameHandler = ({ io, socket, gameManager, db }: SocketContext) => {
 	})
 
 	socket.on('joinGame', async (msg: string) => {
+		throw new Error("tester");
 		//Add users to waiting room
 		socket.join('waitRoom');
 		console.log("user joined")
