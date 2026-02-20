@@ -18,7 +18,7 @@ model User {
   GuestLogin     Boolean @default(false)
   Online         Boolean @default(true)
   CreationDate   DateTime
-  AccountDeleteTime DateTime?
+  pendingAccount Boolean @default(true)
   GamesWon       Int      @default(0)
   ProfilePicture Bytes?
   BlockedBy      BlockedUser[] @relation("BlockedBy")

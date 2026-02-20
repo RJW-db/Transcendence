@@ -2,7 +2,10 @@ import { socket } from './services/socket'
 import { home } from './pages/home';
 import { pong } from './pages/pong';
 import { tournament } from './pages/tournament';
+import { loginPage } from './pages/loginPage';
+import {registerPage} from './pages/registerPage'
 import { Navbar } from './pages/navbar';
+import {handleOAuthCallback} from './login/auth';
 
 const	routes: Record<string, () => HTMLElement> = {
 	'/' : home,
@@ -10,16 +13,19 @@ const	routes: Record<string, () => HTMLElement> = {
 	'/matches/ai' : pong,
 	'/matches/local' : pong,
 	'/tournaments' : tournament,
+	'/login' : loginPage,
+	'/register': registerPage,
+	'/callback/google': handleOAuthCallback,
 }
 
-function handleRoute() {
+async function handleRoute() {
 	const path = window.location.pathname;
 	const view = routes[path];
 
 	const container = document.querySelector('#page-content');
 	if (container) {
 		container.innerHTML = ''
-		container.appendChild(view());
+		container.appendChild(await view());
 		if (path === '/matches/player')
 			socket.emit('joinGame', 'Message from client for cookie test')
 

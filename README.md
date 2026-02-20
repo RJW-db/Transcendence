@@ -26,8 +26,11 @@ Make ngrok in separate tab then just make
 3. **Configure your `.env` file:**
    Add your ngrok credentials to the `.env` file:
    ```bash
-   NGROK_AUTHTOKEN=your_authtoken_here
+   NGROK_AUTHTOKEN=<your_authtoken_here>
    NGROK_SITE=<your-custom-domain.ngrok-free.dev>
+   JWT_SECRET=yourSecret
+   JWT_ACCESS_TOKEN_MINUTES=10
+   JWT_REFRESH_TOKEN_DAYS=30
    ```
 
 4. **Build and run:**
