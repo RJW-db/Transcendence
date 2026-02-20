@@ -48,7 +48,9 @@ function handlePrismaError(
 ): null {
   const { messages = {}, extraData = {}, onError } = options;
 
-  // Call custom error handler if provided
+  // Capture stack trace at the call site
+  const callSite = (new Error()).stack?.split('\n')[2]?.trim() || '';
+
   if (onError) {
     onError(error);
   }
@@ -58,17 +60,16 @@ function handlePrismaError(
     const message = messages[code] ?? defaultMessages[code] ?? 'Database error';
     const status = errorStatusCodes[code] ?? 500;
 
-    if (!defaultMessages[code]) {
-      fastify.log.error(`Prisma error [${code}]: ${error.message}`);
-    }
+    fastify.log.error(`Prisma error [${code}]: ${error.message} at ${callSite}`);
     reply.status(status).send({ message, ...extraData });
   } else if (error instanceof Prisma.PrismaClientValidationError) {
+    fastify.log.error(`Prisma validation error at ${callSite}`);
     reply.status(400).send({ message: messages['validation'] ?? 'Invalid data provided', ...extraData });
   } else if (error instanceof Prisma.PrismaClientInitializationError) {
-    fastify.log.error(`Database connection error: ${error.message}`);
+    fastify.log.error(`Database connection error: ${error.message} at ${callSite}`);
     reply.status(503).send({ message: messages['connection'] ?? 'Database unavailable', ...extraData });
   } else {
-    fastify.log.error(`Unexpected error: ${error}`);
+    fastify.log.error(`Unexpected error: ${error} at ${callSite}`);
     reply.status(500).send({ message: messages['unknown'] ?? 'Internal server error', ...extraData });
   }
   return null;
