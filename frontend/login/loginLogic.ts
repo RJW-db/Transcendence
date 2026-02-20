@@ -16,7 +16,7 @@ export async function loginUser(form: HTMLFormElement, errorBox : any): Promise<
     }
 
     // Now send 2FA token with the temporary token
-    const totpResponse = await sendTotpRequest(token2fa, result.tmpToken);
+    const totpResponse = await sendTotpRequest(token2fa);
     const totpResult = await totpResponse.json();
     if (!totpResponse.ok) {
       console.log('2FA verification failed:', totpResult.message);
@@ -49,7 +49,7 @@ async function sendLoginRequest(email: string, password: string): Promise<Respon
 }
 
 // Add new function to send TOTP verification
-async function sendTotpRequest(token2fa: string, tempToken: string): Promise<Response> {
+export async function sendTotpRequest(token2fa: string): Promise<Response> {
   const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
@@ -59,7 +59,6 @@ async function sendTotpRequest(token2fa: string, tempToken: string): Promise<Res
       type: 'verifyTotp',
       Payload: {
         Token2fa: token2fa,
-        tempToken: tempToken
       }
     }),
   });

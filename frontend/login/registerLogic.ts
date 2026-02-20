@@ -3,8 +3,6 @@ import { fetchWithJWTRefresh } from './fetchWithJWTRefresh';
 
 
 export async function registerUser(container: HTMLDivElement, secret: string, token: string ) {
-
-
     const totpResponse = await sendRegisterTotpRequest(token);
     const totpResult = await totpResponse.json();
     if (!totpResponse.ok) {
@@ -86,5 +84,5 @@ export async function registerNewUser(container : HTMLDivElement) : Promise<void
     {
       console.log("Account registration successful, proceeding to TOTP setup");
     }
-    await totpSetup(container, alias, false, checkResult.secret);
+    await totpSetup(container, alias, checkResult.secret);
 }

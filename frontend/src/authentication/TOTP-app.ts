@@ -27,39 +27,35 @@ export function validateEmail(email: string): boolean {
   return simpleRegex.test(email);
 }
 
-export async function totpSetup(container: HTMLDivElement, username: string, oauth: boolean, secret: string){
-  container.innerHTML = await registerTokenHtml;
-  // const usernameInput = document.getElementById('username-input') as HTMLInputElement;
-  // const username = usernameInput.value.trim();
+export async function totpSetup(container: HTMLDivElement, email: string, secret: string){
+    container.innerHTML = await registerTokenHtml;
 
   try {
-    const qrCodeImage = await generateQRCodeImage(username, secret);
+    const qrCodeImage = await generateQRCodeImage(email, secret);
     currentSecret = secret;
-    console.log('Setup complete, secret generated');
-    console.log("Secret:", secret);
-    const qrCodeDiv = document.getElementById('qr-code');
+    const qrCodeDiv = container.querySelector('#qr-code');
     if (qrCodeDiv) {
       qrCodeDiv.innerHTML = `
         <p><strong>Scan this QR code:</strong></p>
         <img src="${qrCodeImage}" alt="QR Code" />
       `;
+      console.log("QR code generated and displayed");
     }
 
-    const secretText = document.getElementById('secret-text');
+    const secretText = container.querySelector('#secret-text');
     if (secretText) {
       secretText.textContent = secret;
     }
 
 
-    document.getElementById('verify-btn')?.addEventListener('click', async(event) => {
+    container.querySelector('#verify-btn')?.addEventListener('click', async(event) => {
       event.preventDefault();
-      const tokenInput = document.getElementById('token-input') as HTMLInputElement;
+      const tokenInput = container.querySelector('#token-input') as HTMLInputElement;
 
       const token = tokenInput.value.trim();
       console.log("verify button clicked")
-      // if (oauth)
-      //   createOauthUser(currentSecret, token);
-      // else
+      console.log('Token entered:', token);
+      console.log('Current secret:', currentSecret);
         await registerUser(container,currentSecret, token);
       return ;
     }
@@ -69,7 +65,6 @@ export async function totpSetup(container: HTMLDivElement, username: string, oau
     console.error('Error during setup:', err);
     alert('Error generating QR code. Check console.');
   }
-
 }
 
 

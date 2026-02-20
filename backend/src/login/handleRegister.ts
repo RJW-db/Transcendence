@@ -21,7 +21,7 @@ async function  checkAccountExists(alias: string, email: string, prisma : Prisma
 }
 
 export const handleRegister: ApiMessageHandler = async (
-  payload: { Alias: string; Email: string; Password: string, Secret: string },
+  payload: { Alias: string; Email: string; Password: string; oauthLogin?: boolean },
   request,
   prisma,
   fastify,
@@ -38,7 +38,6 @@ export const handleRegister: ApiMessageHandler = async (
     reply.status(500).send({ message: 'Incomplete user info received to register account' });
     return;
   }
-
   const hashedPassword = await hashPassword(payload.Password)
   const secret = generateTOTPsecret();
 
@@ -48,10 +47,9 @@ export const handleRegister: ApiMessageHandler = async (
       Email: payload.Email,
       Password: hashedPassword,
       Secret2FA: secret,
-      OauthLogin: false,
-      AccountDeleteTime: new Date(Date.now() + 1000 * 60), // 60 seconds from now
       Online: true,
       CreationDate: new Date(),
+      OauthLogin: payload.oauthLogin ?? false,
     },
   });
   if (!user) {
@@ -59,16 +57,26 @@ export const handleRegister: ApiMessageHandler = async (
     reply.status(400).send({ message: "Failed to create user object" });
     return;
   }
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, 60);
-  reply.cookie('tempAuth', tmpToken, { maxAge: 60 });
-
+  let tmpToken = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
+  reply.cookie('tempAuth', tmpToken, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS });
 
   fastify.log.info(`Registered new user: ${JSON.stringify(user)}`);
-  reply.status(200).send({ message: "User registered, please verify 2FA code", userID: user.ID, secret: secret });
+  reply.status(200).send({ message: "User registered, please verify 2FA code", userID: user.ID, secret: secret , userEmail: user.Email});
+  
+  await new Promise((resolve) => setTimeout(resolve, 1000 * 60)); // removes account if not confirmed within 1 minute
+
+  const pendingAccount : Boolean = (await prisma.user.findUnique({ where: { ID: user.ID } }))?.pendingAccount ?? false;
+  if (pendingAccount) {
+    await prisma.user.delete({ where: { ID: user.ID } });
+    fastify.log.info(`Deleted unverified user: ${JSON.stringify(user)}`);
+    return;
+  }
+  else
+    console.log(`User ${user.Email} verified 2FA and completed registration`);
 };
 
 export const handleRegisterTotp: ApiMessageHandler = async (
-  payload: { VerifyToken: string, tempToken: string },
+  payload: { VerifyToken: string},
   request,
   prisma,
   fastify,
@@ -89,12 +97,12 @@ export const handleRegisterTotp: ApiMessageHandler = async (
 
   const userId = decoded.sub;
   
-  const user = await prisma.user.findUnique({ where: { ID: userId } });
+  let user = await prisma.user.findUnique({ where: { ID: userId } });
   if (!user) {
     reply.status(400).send({ message: 'User not found' });
     return;
   }
-
+  
   if (!(await verifyToken(payload.VerifyToken, user.Secret2FA))) {
     fastify.log.error(`Incorrect Token entered for registration`);
     reply.status(400).send({message: "Incorrect Token entered"});
@@ -103,6 +111,15 @@ export const handleRegisterTotp: ApiMessageHandler = async (
 
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
+  user = await prisma.user.update({
+    where: { ID: user.ID },
+    data: { pendingAccount: false }
+  });
+  if (!user) {
+    fastify.log.error(`Failed to update user after 2FA verification:`);
+    reply.status(500).send({ message: 'Failed to register user after 2FA verification' });
+    return;
+  }
   reply.clearCookie('tempAuth');
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
   

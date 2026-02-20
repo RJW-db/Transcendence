@@ -1,21 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>login token</title>
-</head>
-<div class="flex items-center justify-center bg-gray-100 bg-black h-screen w-full text-white">
-    <div
-        class="shadow-lg rounded-lg p-8 w-full max-w-md mx-auto flex flex-col items-center bg-neutral-900">
-        <form method="post" class="w-full flex flex-col gap-4">
-            <h1 class="italic text-2xl font-bold text-center mb-4">Login token</h1>
-            <input name="token" maxlength="6"
-                class="border rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-body mx-10"
-                placeholder="one-time-code" required autocomplete="one-time-code">
-            <button id="verify-btn" type="submit"
-                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-1 rounded transition">Login</button>
-            <p id="verifyError" class="text-red-500 text-center"></p>
-        </form>
-    </div>
+<div
+    class="flex items-center justify-center shadow-lg rounded-lg p-8 w-full max-w-md mx-auto bg-neutral-900 text-white">
+    <form method="post" class="w-full flex flex-col gap-4">
+        <h1 class="italic text-2xl font-bold text-center mb-4">Login token</h1>
+        <input name="token" maxlength="6"
+            class="border rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-body mx-10"
+            placeholder="one-time-code" required autocomplete="one-time-code">
+        <button id="verify-btn" type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-1 rounded transition">Login</button>
+        <p id="verifyError" class="text-red-500 text-center"></p>
+    </form>
 </div>
-</html>

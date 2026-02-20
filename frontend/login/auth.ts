@@ -1,11 +1,7 @@
-// import { ws } from '../main';
-
-import { authtoken } from 'ngrok';
-import oauthverifyPageHtml from '../html/oauthVerifyPage.html?raw';
-// import { appRoot } from '../main';
+import { register } from "node:module";
 import { totpSetup } from "../src/authentication/TOTP-app";
-// import {client_id, redirect_uri} from './.env';
-
+import oauthverifyPageHtml from '../html/oauthVerifyPage.html?raw'
+import {sendTotpRequest} from '../login/loginLogic'
 
 export function oauthSignIn() {
   // Google's OAuth 2.0 endpoint for requesting an access token
@@ -23,10 +19,8 @@ export function oauthSignIn() {
   window.location.href = fullUrl;
 }
 
-let accessToken = "";
 
-async function handleOAuthCallback() {
-  // Check if we're on the callback page
+export async function handleOAuthCallback() {
   const params = await new URLSearchParams(window.location.hash.substring(1));
 
   if (await checkErrorResponse(params)) {
@@ -34,30 +28,67 @@ async function handleOAuthCallback() {
   }
 
   // Extract token and other parameters
-  accessToken = await params.get('access_token') as string;
+  const accessToken = await params.get('access_token') as string;
+  console.log("Access Token received:", accessToken);
   if (!accessToken) {
     console.error('No access token found in URL parameters');
     alert('Authentication failed: No token received');
-    window.location.href = '#login';
+    window.location.href = '/login';
     return;
   }
 
-  const response = await sendOauthAccountExistCheck();
-  if (!response.ok) { // Check if the request was successful (status code 2xx)
-    alert('Authentication failed: ' + response.statusText);
-    window.location.hash = '#login';
+  // console.log("Access token extracted, checking account existence");
+  const response = await sendOauthAccountExistCheck(accessToken);
+
+
+  if (!response.ok) { // Check if the request was successful (status code 2xx)]
+    alert('Authentication failed after sendaccountexistCheck: ' + response.statusText);
+    window.location.href = '/login';
     return;
   }
+
+
+  const container: HTMLDivElement = document.createElement('div');
+  container.className = '';
+
   const result = await response.json();
-  if (result.oauthAccount === true) {
-    await oauthLogin();
+  if (!result.secret)
+  {
+    await show2FaPage(container);
+    console.log("trying to load 2FA page for existing user");
   }
-  else if (result.secret2FA) {
-    const secret = result.secret2FA;
-    console.log("got secret from server:", secret);
-    await totpSetup(result.email, true, secret);
+  else
+    await totpSetup(container, result.email, result.secret);
+
+
+  return container;
+}
+
+async function show2FaPage(container: HTMLDivElement) {
+  container.innerHTML = await oauthverifyPageHtml;
+    const form = container.querySelector('form');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const token = formData.get('token') as string;
+    const response = await sendTotpRequest(token);
+    const result = await response.json();
+    if (response.ok) {
+      // window.close();
+      localStorage.setItem("userEmail", result.user.email);
+      localStorage.setItem("userAlias", result.user.alias);
+      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("guestUser", "false");
+      window.location.href = '/';
+      return;
+    }
+    if (!response.ok) {
+      const errorBox = appRoot.querySelector('#verifyError');
+      errorBox!.textContent = `Error: ${result.message}`;
+    }
   }
-  // window.close();
+  );
 }
 
 async function checkErrorResponse(params: URLSearchParams): Promise<boolean> {
@@ -69,14 +100,14 @@ async function checkErrorResponse(params: URLSearchParams): Promise<boolean> {
     console.error('Error Description:', errorDescription);
     alert(`Authentication failed: ${errorDescription || error}`);
     // Redirect back to login or home
-    window.location.href = '/';
+    window.location.href = '/login';
     return true;
   }
   return false;
 }
 
 
-async function sendOauthAccountExistCheck(): Promise<Response> {
+async function sendOauthAccountExistCheck(accessToken: string): Promise<Response> {
   const response = await fetch('/api', {
     method: 'POST',
     headers: {
@@ -119,23 +150,6 @@ async function oauthLogin() {
   );
 }
 
-async function sendLoginRequest(token2fa: string): Promise<Response> {
-const response = await fetch('/api', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'oauthLogin',
-        Payload: {
-          Token: accessToken,
-          loginToken: token2fa
-        }
-      }),
-    });
-    return response;
-}
-
 export async function createOauthUser(secret: string, loginToken: string)
 {
   const response = await fetch('/api', {
@@ -172,9 +186,9 @@ export async function createOauthUser(secret: string, loginToken: string)
 
 }
 
-// Call this when the callback page loads - wrap in setTimeout to ensure ws is initialized
-if (window.location.pathname.includes('/callback/google')) {
-  // Wait for both DOM and modules to load
-    handleOAuthCallback();
-}
+// // Call this when the callback page loads - wrap in setTimeout to ensure ws is initialized
+// if (window.location.pathname.includes('/callback/google')) {
+//   // Wait for both DOM and modules to load
+//     handleOAuthCallback();
+// }
 

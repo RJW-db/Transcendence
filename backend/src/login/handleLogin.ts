@@ -6,7 +6,7 @@ import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authenticati
 
 
 export const handleLoginPassword: ApiMessageHandler = async (
-  payload: { Email: string; Password: string; Token2fa: string},
+  payload: { Email: string; Password: string},
   request,
   prisma,
   fastify,
@@ -22,7 +22,7 @@ export const handleLoginPassword: ApiMessageHandler = async (
     return;
   }
 
-  if (!user.Password || !(await verifyPassword(user.Password, payload.Password))) {
+  if (user.OauthLogin === false && (!user.Password || !(await verifyPassword(user.Password, payload.Password)))) {
     fastify.log.error(`Invalid password for email: ${payload.Email}`);
     reply.status(400).send({ message: 'Invalid email or password' });
     return;
@@ -36,13 +36,18 @@ export const handleLoginPassword: ApiMessageHandler = async (
 }
 
 export const handleLoginTotp: ApiMessageHandler = async (
-  payload: { Token2fa: string, tempToken: string },
+  payload: { Token2fa: string},
   request,
   prisma,
   fastify,
   reply
 ) => {
-  const decoded = decodeJWT(payload.tempToken, JWT_SECRET);
+  const tempToken = request.cookies.tempAuth;
+  if (!tempToken) {
+    reply.status(401).send({ message: 'cookie session expired' });
+    return;
+  }
+  const decoded = decodeJWT(tempToken, JWT_SECRET);
   if (!decoded) {
     reply.status(401).send({ message: 'Session expired' });
     return;

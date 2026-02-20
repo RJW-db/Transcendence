@@ -1,12 +1,14 @@
 import { error } from "node:console";
 import { loginUser } from "../login/loginLogic";
 import { fetchWithJWTRefresh } from "../login/fetchWithJWTRefresh";
+import { oauthSignIn } from "../login/auth";
 
 export async function loginPage() {
   const container = document.createElement('div');
   container.className = '';
   const response = await fetch("../html/loginPage.html");
   container.innerHTML = await response.text();
+
   const guestLogin = container.querySelector('#guestLogin');
   guestLogin?.addEventListener('click', (e: Event) => {
     e.preventDefault();
@@ -15,14 +17,20 @@ export async function loginPage() {
     return true;
   });
 
+  const oauthLogin = container.querySelector('#loginWithGoogle');
+  oauthLogin?.addEventListener('click', (e: Event) => {
+    e.preventDefault();
+    console.log('OAuth login clicked');
+    oauthSignIn();
+    return true;
+  });
+  
   const form = container.querySelector('form');
-
   form?.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
     const errorBox = container.querySelector('#loginError');
     console.log("logging in user");
     loginUser(form, errorBox);
-
   });
     return container;
 }
