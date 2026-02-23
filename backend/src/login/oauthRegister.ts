@@ -3,19 +3,25 @@ import {verifyToken, generateTOTPsecret} from '../authentication/TOTP'
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { handleLoginPassword, oauthLogin } from './handleLogin';
 import { handleRegister, handleRegisterTotp } from './handleRegister';
+import { createSafePrisma } from '../utils/prismaHandle';
 
 export const handleOauthToken: ApiMessageHandler = async (
   payload: { Token: string },
   request,
-    prisma,
-    fastify,
-    reply
+  prisma,
+  fastify,
+  reply
 ) => {
   const userInfo : { email: string; name: string } | null = await getGoogleUserInfo(payload.Token, fastify, reply);
   if (!userInfo) {
       return;
   }
-  const user = await prisma.user.findFirst({
+
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'User not found'
+  });
+
+  const user = await db.user.findFirst({
     where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
   });
 
@@ -37,7 +43,7 @@ export const handleOauthToken: ApiMessageHandler = async (
 }
 
 export const oauthRegister: ApiMessageHandler = async (  
-    payload: { Token: string, loginToken: string },
+  payload: { Token: string, loginToken: string },
   request,
   prisma,
   fastify,

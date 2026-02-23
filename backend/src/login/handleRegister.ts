@@ -5,21 +5,8 @@ import { generateCookie } from './accountUtils'
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
 import { createSafePrisma } from '../utils/prismaHandle';
 import { PrismaClient } from '@prisma/client';
+import { createRefreshToken } from '../authentication/refreshToken';
 
-async function  checkAccountExists(alias: string, email: string, prisma : PrismaClient): Promise<boolean> {
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        { Alias: alias },
-        { Email: email }
-      ]
-    }
-  });
-  if (!user) {
-    return Promise.resolve(false);
-  }
-  return Promise.resolve(true);
-}
 
 export const handleRegister: ApiMessageHandler = async (
   payload: { Alias: string; Email: string; Password: string; oauthLogin?: boolean },
@@ -28,7 +15,18 @@ export const handleRegister: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
-  if (await checkAccountExists(payload.Alias, payload.Email, prisma)) {
+  const dbCheck = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'User not found'
+  });
+  const existingUser = await dbCheck.user.findFirst({
+    where: {
+      OR: [
+        { Alias: payload.Alias },
+        { Email: payload.Email }
+      ]
+    }
+  });
+  if (existingUser) {
     fastify.log.error(`User already exists: ${payload.Alias}, ${payload.Email}`);
     reply.status(400).send({ message: 'User already exists' });
     return;
@@ -60,7 +58,7 @@ export const handleRegister: ApiMessageHandler = async (
 
   if (!user) return; // Error already sent to client
 
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, 10);
+  let tmpToken = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.TMP_TOKEN_MS / 1000);
   reply.cookie('tempAuth', tmpToken);
 
 
@@ -69,9 +67,13 @@ export const handleRegister: ApiMessageHandler = async (
   
   await new Promise((resolve) => setTimeout(resolve, 1000 * 60)); // removes account if not confirmed within 1 minute
 
-  const pendingAccount : Boolean = (await prisma.user.findUnique({ where: { ID: user.ID } }))?.pendingAccount ?? false;
+  const dbCleanup = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'User not found'
+  });
+
+  const pendingAccount: boolean = (await dbCleanup.user.findUnique({ where: { ID: user.ID } }))?.pendingAccount ?? false;
   if (pendingAccount) {
-    await prisma.user.delete({ where: { ID: user.ID } });
+    await dbCleanup.user.delete({ where: { ID: user.ID } });
     fastify.log.info(`Deleted unverified user: ${JSON.stringify(user)}`);
     return;
   }
@@ -99,14 +101,13 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
-
   const userId = decoded.sub;
   // Use the safe Prisma wrapper for user lookup
   const db = createSafePrisma(prisma, reply, fastify, {
     P2025: 'User not found'
   });
 
-  const user = await db.user.findUnique({ where: { ID: userId } });
+  let user = await db.user.findUnique({ where: { ID: userId } });
   if (!user) return; // Error already sent to client
 
   if (!(await verifyToken(payload.VerifyToken, user.Secret2FA))) {
@@ -115,9 +116,15 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
+  const refreshSuccess = await createRefreshToken(user.ID, request, reply, prisma);
+  if (!refreshSuccess) {
+    return;
+  }
+
   if (!await generateCookie(user.ID, prisma, reply, fastify))
     return;
-  user = await prisma.user.update({
+
+  user = await db.user.update({
     where: { ID: user.ID },
     data: { pendingAccount: false }
   });
@@ -126,6 +133,7 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     reply.status(500).send({ message: 'Failed to register user after 2FA verification' });
     return;
   }
+
   reply.clearCookie('tempAuth');
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
   

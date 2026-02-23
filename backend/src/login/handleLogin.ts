@@ -3,6 +3,8 @@ import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { verifyPassword } from '../authentication/hashPasswords';
 import { verifyToken } from '../authentication/TOTP'
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
+import { createSafePrisma } from '../utils/prismaHandle';
+import { createRefreshToken } from '../authentication/refreshToken';
 
 
 export const handleLoginPassword: ApiMessageHandler = async (
@@ -13,12 +15,15 @@ export const handleLoginPassword: ApiMessageHandler = async (
   reply
 ) => {
   fastify.log.info(`Handling login for email: ${payload.Email}`);
-  const user = await prisma.user.findUnique({
+
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'User not found'
+  });
+  const user = await db.user.findUnique({
     where: { Email: payload.Email },
   });
   if (!user) {
-    fastify.log.error(`User not found for email: ${payload.Email}`);
-    reply.status(400).send({ message: 'Invalid email or password' });
+    // Error already sent by the wrapper
     return;
   }
 
@@ -55,9 +60,12 @@ export const handleLoginTotp: ApiMessageHandler = async (
 
   const userId = decoded.sub;
   
-  const user = await prisma.user.findUnique({ where: { ID: userId } });
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'User not found'
+  });
+
+  const user = await db.user.findUnique({ where: { ID: userId } });
   if (!user) {
-    reply.status(400).send({ message: 'User not found' });
     return;
   }
 
@@ -65,6 +73,11 @@ export const handleLoginTotp: ApiMessageHandler = async (
     reply.status(400).send({ message: 'Invalid 2FA token' });
     return;
   }
+
+  // const refreshSuccess = await createRefreshToken(user.ID, request, reply, prisma);
+  // if (!refreshSuccess) {
+  //   return;
+  // }
 
   await generateCookie(user.ID, prisma, reply, fastify);
   reply.clearCookie('tempAuth');
@@ -83,13 +96,17 @@ export const oauthLogin: ApiMessageHandler = async (
   if (!userInfo) {
     return;
   }
-  const user = await prisma.user.findFirst({
+
+  const db = createSafePrisma(prisma, reply, fastify, {
+    P2025: 'No such OAuth user'
+  });
+  const user = await db.user.findFirst({
     where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
   });
   if (!user) {
-    reply.status(400).send({ message: 'No such OAuth user' });
     return;
   }
+
   fastify.log.info(`Verifying 2FA token for OAuth login: ${payload.loginToken}, user secret: ${user.Secret2FA}`);
   if (!(await verifyToken(payload.loginToken, user.Secret2FA))) {
     fastify.log.error(`Invalid 2FA token for OAuth registration`);

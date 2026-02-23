@@ -5,8 +5,9 @@ export const JWT_SECRET = process.env.JWT_SECRET || (() => {
 })();
 
 export const TOKEN_TIMES = {
+  TMP_TOKEN_MS: 90000, // 1.5 minutes for 2FA verification
   SHORT_LIVED_TOKEN_MS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60 * 1000,
-  REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000,
+  REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000
 };
 
 interface JWTHeader {
@@ -69,6 +70,8 @@ export function verifyAndDecodeJWT(token: string, secret: string): JWTPayload {
   }
 
   const payload: JWTPayload = JSON.parse(base64UrlDecode(encodedPayload)) as JWTPayload;
+
+  console.log('\n\nJWT payload:', payload, 'Current time:', Math.floor(Date.now() / 1000));
 
   if (payload.exp < Math.floor(Date.now() / 1000)) {
     throw new Error('Token expired');

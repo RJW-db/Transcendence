@@ -11,6 +11,7 @@ export async function getGoogleUserInfo(token: string, fastify: FastifyInstance,
             'Authorization': `Bearer ${token}`
         }
     });
+
     if (!response.ok) {
         fastify.log.error(`Failed to fetch user info: ${response.status} ${response.statusText}`);
         reply.status(500).send({ message: 'Failed to fetch user info from OAuth provider' });
@@ -25,7 +26,7 @@ export async function generateCookie(userId: number, prisma: PrismaClient, reply
 
   reply.cookie('auth', sessionJWT, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS, httpOnly: true });
 
-  fastify.log.info(`Created cookie in DB for user ID: ${userId}`);
+  fastify.log.info(`Cookie generated for user ${userId}`);
   return true;
 }
 
