@@ -135,7 +135,7 @@ CREATE TABLE User (
     GuestLogin boolean NOT NULL DEFAULT 0,
     Online boolean NOT NULL,
     CreationDate datetime NOT NULL,
-    AccountDeleteTime datetime NULL,
+    pendingAccount boolean default 1,
     GamesWon integer NOT NULL DEFAULT 0,
     ProfilePicture blob,
     CONSTRAINT Alias UNIQUE (Alias),
