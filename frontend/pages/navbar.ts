@@ -1,4 +1,5 @@
 import { socket } from '../services/socket'
+import { logoutUser } from '../login/loginLogic';
 
 export function Navbar() {
   const nav = document.createElement('nav');
@@ -54,6 +55,13 @@ export function Navbar() {
             </button>
 
             <!-- Profile Dropdown Menu -->
+            <div id="login-menu" class="hidden absolute right-0 mt-3 w-48 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl py-2 z-50 ring-1 ring-white/5">
+              <div class="px-4 py-2 border-b border-slate-800 mb-1">
+                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Welcome!</p>
+              </div>
+              <a href="/login" data-link class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-cyan-400 transition-colors">Log In</a>
+              <a href="/register" data-link class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-cyan-400 transition-colors">Create Account</a>
+            </div>
             <div id="profile-menu" class="hidden absolute right-0 mt-3 w-48 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl py-2 z-50 ring-1 ring-white/5">
               <div class="px-4 py-2 border-b border-slate-800 mb-1">
                 <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">User Settings</p>
@@ -74,14 +82,27 @@ export function Navbar() {
 
   const profileBtn = nav.querySelector('#profile-menu-btn');
   const profileMenu = nav.querySelector('#profile-menu');
+  const loginMenu = nav.querySelector('#login-menu');
   const matchesBtn = nav.querySelector('#matches-menu-btn');
   const matchesMenu = nav.querySelector('#matches-menu');
+  const logoutBtn = nav.querySelector('#logout-btn');
 
   // Toggle Profile Dropdown
   profileBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     matchesMenu?.classList.add('hidden'); // Close other dropdown
-    profileMenu?.classList.toggle('hidden');
+    if (localStorage.getItem('userEmail') === null)
+    {
+      loginMenu?.classList.toggle('hidden');
+    }
+    else
+    {
+      profileMenu?.classList.toggle('hidden');
+      logoutBtn?.addEventListener('click', () => {
+        localStorage.clear();
+        logoutUser();
+      });
+    }
   });
 
   // Toggle Matches Dropdown
