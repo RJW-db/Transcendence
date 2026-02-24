@@ -6,6 +6,7 @@ import { loginPage } from './pages/loginPage';
 import {registerPage} from './pages/registerPage'
 import { Navbar } from './pages/navbar';
 import {handleOAuthCallback} from './login/auth';
+import { dashboardPage } from './pages/dashboardPage';
 
 const	routes: Record<string, () => HTMLElement> = {
 	'/' : home,
@@ -16,6 +17,7 @@ const	routes: Record<string, () => HTMLElement> = {
 	'/login' : loginPage,
 	'/register': registerPage,
 	'/callback/google': handleOAuthCallback,
+	'/dashboard': dashboardPage
 }
 
 async function handleRoute() {

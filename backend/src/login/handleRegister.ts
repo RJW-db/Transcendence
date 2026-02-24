@@ -65,8 +65,8 @@ export const handleRegister: ApiMessageHandler = async (
   
   await new Promise((resolve) => setTimeout(resolve, 1000 * 60)); // removes account if not confirmed within 1 minute
 
-  const pendingAccount : Boolean = (await prisma.user.findUnique({ where: { ID: user.ID } }))?.pendingAccount ?? false;
-  if (pendingAccount) {
+  const PendingAccount : Boolean = (await prisma.user.findUnique({ where: { ID: user.ID } }))?.PendingAccount ?? false;
+  if (PendingAccount) {
     await prisma.user.delete({ where: { ID: user.ID } });
     fastify.log.info(`Deleted unverified user: ${JSON.stringify(user)}`);
     return;
@@ -113,7 +113,7 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   user = await prisma.user.update({
     where: { ID: user.ID },
-    data: { pendingAccount: false }
+    data: { PendingAccount: false }
   });
   if (!user) {
     fastify.log.error(`Failed to update user after 2FA verification:`);
@@ -143,7 +143,7 @@ export const createGuestAccount : ApiMessageHandler = async (
       Email: email,
       Password: '',
       Secret2FA: secret,
-      // AccountDeleteTime: null,
+      PendingAccount: false,
       GuestLogin: true,
       CreationDate: new Date(),
     },

@@ -17,6 +17,7 @@ import {handleRegister, handleRegisterTotp, createGuestAccount} from '../login/h
 import {handleLoginPassword, handleLoginTotp, oauthLogin, handleLogout} from '../login/handleLogin';
 import {handleOauthToken, oauthRegister} from '../login/oauthRegister';
 import { create } from 'node:domain';
+import { getCurrentLoginInfo } from '../login/getAccountInfo';
 
 export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'registerUser': handleRegister,
@@ -28,4 +29,5 @@ export const apimessageHandlers: Record<string, ApiMessageHandler> = {
   'oauthRegister': oauthRegister,
   'oauthLogin': oauthLogin,
   'createGuestAccount': createGuestAccount,
+  'getLoginInfo': getCurrentLoginInfo,
 };

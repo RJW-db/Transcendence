@@ -2,6 +2,7 @@ import { error } from "node:console";
 import { loginUser } from "../login/loginLogic";
 import { fetchWithJWTRefresh } from "../login/fetchWithJWTRefresh";
 import { oauthSignIn } from "../login/auth";
+import { loginGuestUser } from "../login/loginLogic";
 
 export async function loginPage() {
   const container = document.createElement('div');
@@ -13,8 +14,8 @@ export async function loginPage() {
   guestLogin?.addEventListener('click', (e: Event) => {
     e.preventDefault();
     console.log('Guest login clicked');
-    // loginGuestUser();
-    return true;
+    loginGuestUser(container);
+    return container;
   });
 
   const oauthLogin = container.querySelector('#loginWithGoogle');
@@ -74,7 +75,7 @@ async function guestLogin(container: HTMLDivElement) {
       console.log('Guest account created successfully:', result.message);
       localStorage.setItem("userEmail", result.user.email);
       localStorage.setItem("userAlias", result.user.alias);
-      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("userID", result.user.userID);
       localStorage.setItem("guestUser", "true");
       window.location.href = '';
     }

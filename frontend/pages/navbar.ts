@@ -91,7 +91,7 @@ export function Navbar() {
   profileBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     matchesMenu?.classList.add('hidden'); // Close other dropdown
-    if (localStorage.getItem('userEmail') === null)
+    if (localStorage.getItem('userID') === null)
     {
       loginMenu?.classList.toggle('hidden');
     }

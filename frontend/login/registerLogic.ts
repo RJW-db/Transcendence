@@ -14,7 +14,7 @@ export async function registerUser(container: HTMLDivElement, secret: string, to
 
     localStorage.setItem("userEmail", totpResult.user.email);
     localStorage.setItem("userAlias", totpResult.user.alias);
-    localStorage.setItem("userId", totpResult.user.userID);
+    localStorage.setItem("userID", totpResult.user.userID);
     alert("Registration successful! Redirecting to home page.");
     window.location.href = '/';
 }

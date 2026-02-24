@@ -78,7 +78,7 @@ async function show2FaPage(container: HTMLDivElement) {
       // window.close();
       localStorage.setItem("userEmail", result.user.email);
       localStorage.setItem("userAlias", result.user.alias);
-      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("userID", result.user.userID);
       localStorage.setItem("guestUser", "false");
       window.location.href = '/';
       return;
@@ -137,7 +137,7 @@ async function oauthLogin() {
       // window.close();
       localStorage.setItem("userEmail", result.user.email);
       localStorage.setItem("userAlias", result.user.alias);
-      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("userID", result.user.userID);
       localStorage.setItem("guestUser", "false");
       window.location.href = '/';
       return;
@@ -179,7 +179,7 @@ export async function createOauthUser(secret: string, loginToken: string)
       alert("OAuth user created successfully");
       localStorage.setItem("userEmail", result.user.email);
       localStorage.setItem("userAlias", result.user.alias);
-      localStorage.setItem("userId", result.user.userID);
+      localStorage.setItem("userID", result.user.userID);
       localStorage.setItem("guestUser", "false");
       window.location.href = '/';
     }
