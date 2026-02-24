@@ -20,7 +20,7 @@ import { socketError } from './utils/socketError';
 
 
 const fastify = Fastify({
-  logger: true // Enable logger for better development experience
+//   logger: true // Enable logger for better development experience
 });
 
 // export fastiftCookieOptions
@@ -42,7 +42,13 @@ cors: {
 	origin: "*", // Allow all origins for simplicity, adjust in production
 	methods: ["GET", "POST"]
 },
-path: '/ws'
+path: '/ws',
+connectionStateRecovery: {
+	// The backup duration of sessions and packets (in ms)
+	maxDisconnectionDuration: 2 * 60 * 1000,
+	// Whether to skip middlewares upon successful recovery
+	skipMiddlewares: true,
+}
 });
 let dataid = 1;
 //console.log("client .size is ", clients.size);
@@ -79,6 +85,7 @@ const gameManager = new GameWorkerManager(io, prisma);
 
 io.on('connection', (socket: MySocket) => {
 	socketError(socket);
+	socket.emit(`homePage`, "Load homepage on connect");
 	console.log(`Socket connected: ${socket.id}`);
 	socket.data.userId = dataid;
 	socket.data.matchID = null;
@@ -239,17 +246,19 @@ async function gracefulShutdown(signal: string) {
   fastify.log.info(`${signal} received, starting graceful shutdown...`);
 
   try {
-    // 1. Stop accepting new connections
-    fastify.log.info('Closing server to new connections...');
-    await fastify.close();
-
-    // 2. Disconnect all Socket.IO clients gracefully
-    fastify.log.info('Disconnecting all Socket.IO clients...');
-    const sockets = await io.fetchSockets();
-    for (const socket of sockets) {
-      socket.disconnect(true);
-    }
-    io.close();
+	  
+	// 1. Disconnect all Socket.IO clients gracefully
+	fastify.log.info('Disconnecting all Socket.IO clients...');
+	io.emit('internalError', "Server is shutting down");
+	const sockets = await io.fetchSockets();
+	for (const socket of sockets) {
+		socket.disconnect(true);
+	}
+	io.close();
+		
+	// 2. Stop accepting new connections
+	fastify.log.info('Closing server to new connections...');
+	await fastify.close();
 
     // 3. Shutdown game workers
     fastify.log.info('Shutting down game workers...');
@@ -280,4 +289,14 @@ process.on('uncaughtException', (error: Error) => {
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
   fastify.log.error(`Unhandled Rejection - reason: ${reason}`);
   gracefulShutdown('unhandledRejection');
+});
+
+
+// backend/src/index.ts
+
+fastify.get('/health', async (request, reply) => {
+  // Optional: Check if the database is also connected
+  // if (!db.isConnected) return reply.code(500).send('DB Down');
+
+  return { status: 'ok' }; // Returns 200 OK
 });

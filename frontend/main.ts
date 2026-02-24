@@ -1,5 +1,5 @@
 // import io  from 'socket.io-client';
-import './services/socket';
+import { socket } from './services/socket';
 import './styles.css';
 import { initDirectMessages } from './services/directMessages';
 
@@ -25,6 +25,13 @@ function booststrap() {
 	
 	initRouter();
 	initDirectMessages();
+
+	socket.on('internalError', (msg: string) => {
+		console.log(`${msg}`);
+		pageContent.innerHTML = 'Internal Server Error';
+		appRoot.appendChild(pageContent);
+	})
+
 }
 
 booststrap();

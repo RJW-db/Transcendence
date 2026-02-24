@@ -29,6 +29,8 @@ export interface ServerToClientEvents {
   error: (msg: any) => void;
   directMessage: (msg: IncomingDirectMessage) => void;
   unreadMessages: (msgs: IncomingDirectMessage[]) => void;
+  internalError: (msg: string) => void;
+  homePage: (msg: string) => void;
   // Add other events here
 }
 

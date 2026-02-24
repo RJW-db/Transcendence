@@ -29,7 +29,8 @@ export function socketError(socket: MySocket) {
           message: err.message || "Internal Server Error",
           code: err.code || "INTERNAL_ERROR"
         };
-
+        //We can kill the server if needed
+        // process.kill(process.pid, 'SIGINT');
         if (callback) {
           callback(errorResponse);
         } else {
