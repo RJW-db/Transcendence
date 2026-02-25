@@ -8,9 +8,9 @@ export const JWT_SECRET = process.env.JWT_SECRET || (() => {
 
 export const TOKEN_TIMES = {
   REGISTRATION_TOKEN_MS: 90000, // 1.5 minutes for 2FA verification
+  REGISTRATION_TOKEN_SECONDS: 90, // 1.5 minutes for 2FA verification
   SHORT_LIVED_TOKEN_MS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60 * 1000,
-  SHORT_LIVED_TOKEN_SECONDS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60,
-  REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000,
+  SHORT_LIVED_TOKEN_SECONDS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60
 };
 
 interface JWTHeader {
@@ -85,7 +85,7 @@ export function decodeJWT(token: string): JWTPayload | null {
     console.log('\n\nJWT payload:', payload, 'Current time:', Math.floor(Date.now() / 1000));
 
     if (payload.exp < Math.floor(Date.now() / 1000)) {
-      throw new Error('Token expired');
+      throw new Error('Token expired');     //fix not throw??
     }
 
     return payload;
@@ -96,7 +96,8 @@ export function decodeJWT(token: string): JWTPayload | null {
 }
 
 async function authenticateUserBase(request: any, reply: any, prisma: any) {
-  const payload: JWTPayload | null = decodeJWT(request.cookies.jwtReg);
+  // const payload: JWTPayload | null = decodeJWT(request.cookies.jwtReg);
+  const payload: JWTPayload | null = decodeJWT(request.cookies.jwt);
   const now: number = Math.floor(Date.now() / 1000);
   if (payload && payload.exp - payload.iat <= TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS) {
     return payload;
@@ -125,7 +126,7 @@ async function authenticateUserBase(request: any, reply: any, prisma: any) {
 }
 
 // Exported wrapper for normal session (10 min JWT)
-export async function authenticateUserSession(request: any, reply: any, prisma: any, secret: string): Promise<JWTPayload | null> {
+export async function authenticateUserSession(request: any, reply: any, prisma: any): Promise<JWTPayload | null> {
   // return authenticateUserBase(request, reply, prisma, secret, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
   const payload = await authenticateUserBase(request, reply, prisma);
   if (payload) {
@@ -148,8 +149,13 @@ export async function authenticateUserSession(request: any, reply: any, prisma: 
 // }
 
 export function generateRegistrationJWT(userId: number, reply: any) {
-  const token = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_MS / 1000);
+  const token = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_SECONDS);
   reply.cookie('jwtReg', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.REGISTRATION_TOKEN_MS });
+}
+
+export function generateShortLivedJWT(userId: number, reply: any) {
+  const token = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS);
+  reply.cookie('jwt', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS });
 }
 
 // all calls to this function can remove the secret because it will be scoped to this file.

@@ -1,7 +1,8 @@
 import { FastifyInstance, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from "crypto";
-import { generateJWT, JWT_SECRET, TOKEN_TIMES } from '../authentication/jsonWebToken';
+import { generateShortLivedJWT } from '../authentication/jsonWebToken';
+// import { generateJWT, JWT_SECRET, TOKEN_TIMES } from '../authentication/jsonWebToken';
 
 
 export async function getGoogleUserInfo(token: string, fastify: FastifyInstance, reply: FastifyReply): Promise<{ email: string; name: string } | null> {
@@ -22,11 +23,11 @@ export async function getGoogleUserInfo(token: string, fastify: FastifyInstance,
 }
 
 export async function generateCookie(userId: number, prisma: PrismaClient, reply: FastifyReply, fastify: FastifyInstance): Promise<boolean> {
-  const sessionJWT = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
+  const sessionJWT = generateShortLivedJWT(userId, reply);
 
-  reply.cookie('auth', sessionJWT, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS, httpOnly: true });
+//   reply.cookie('jwt', sessionJWT, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS, httpOnly: true });
 
-  fastify.log.info(`Cookie generated for user ${userId}`);
+//   fastify.log.info(`Cookie generated for user ${userId}`);
   return true;
 }
 

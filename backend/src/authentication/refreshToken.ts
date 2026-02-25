@@ -1,9 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'crypto';
 // import { validateAuthToken } from './validateAuthToken';
-import { generateJWT, JWT_SECRET, TOKEN_TIMES } from './jsonWebToken';
 import { PrismaClient } from '@prisma/client';
 import { createSafePrisma } from '../utils/prismaHandle';
+
+export const REFRESH_TOKEN_TIME = parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10) * 24 * 60 * 60; // in seconds
 
 async function verifyRefreshToken(userID: number, request: FastifyRequest, reply: FastifyReply, prisma: PrismaClient) {
     const rawToken: string = request.cookies.refreshToken || '';
@@ -35,14 +36,12 @@ async function verifyRefreshToken(userID: number, request: FastifyRequest, reply
 
     if (new Date() > tokenRecord.exp) {
         // Token expired - create new refresh token and generate new JWT
-        // const newJWT = generateJWT(userID, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
         // const newRefreshToken = await createRefreshToken(userID, request, reply, prisma);
         // reply.send({ jwt: newJWT, refreshToken: newRefreshToken });
         return false;
     }
 
     // // Token still valid - generate new JWT but keep refresh token
-    // const newJWT = generateJWT(userID, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
     // reply.send({ jwt: newJWT });
     return true;
 }
@@ -55,7 +54,7 @@ export async function RefreshToken(userID: number, request: FastifyRequest, repl
     return await createRefreshToken(userID, request, reply, prisma);
 }
 
-async function safeDeleteToken( db: PrismaClient,
+async function safeDeleteToken(  db: PrismaClient,
   userID: number,
   retries: number
 ): Promise<boolean> {
@@ -82,7 +81,7 @@ console.log('\n are we even getting here?\n\n');
 console.log('\n are we even getting here?\n\n');
 
     const currentTime: Date = new Date();
-    const expiryDate: Date = new Date(currentTime.getTime() + TOKEN_TIMES.REFRESH_TOKEN_MS);
+    const expiryDate: Date = new Date(currentTime.getTime() + REFRESH_TOKEN_TIME);
 
     const created = await db.jWTRefreshToken.create({
         data: {
@@ -100,10 +99,10 @@ console.log('\n are we even getting here?\n\n');
     }
     console.log('Created refresh token record:', created);
 
-    // reply.setCookie('refreshToken', rawToken, { httpOnly: true, maxAge: TOKEN_TIMES.REFRESH_TOKEN_MS });
+    // reply.setCookie('refreshToken', rawToken, { httpOnly: true, maxAge: REFRESH_TOKEN_TIME });
     reply.setCookie('refreshToken', rawToken, {
       httpOnly: true,
-      maxAge: TOKEN_TIMES.REFRESH_TOKEN_MS,
+      maxAge: REFRESH_TOKEN_TIME,
       sameSite: 'none',
     //   sameSite: 'lax', // or 'none' if cross-site
       secure: true,   // set to true if using HTTPS

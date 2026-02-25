@@ -2,7 +2,7 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from '../authentication/hashPasswords';
 import { verifyToken, generateTOTPsecret } from '../authentication/TOTP'
 import { generateCookie } from './accountUtils'
-import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT, generateRegistrationJWT, authenticateUserSession } from '../authentication/jsonWebToken';
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT, generateRegistrationJWT, authenticateUserSession, generateShortLivedJWT } from '../authentication/jsonWebToken';
 import { createSafePrisma } from '../utils/prismaHandle';
 import { PrismaClient } from '@prisma/client';
 import { createRefreshToken } from '../authentication/refreshToken';
@@ -118,8 +118,14 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
+  // if (!await authenticateUserSession(request, reply, prisma)) {
+  //   return;
+  // }
+
   reply.clearCookie('jwtReg');
-  if (!await authenticateUserSession(request, reply, prisma, JWT_SECRET)) {
+  generateShortLivedJWT(userId, reply); // sets the jwt cookie
+  if (!await createRefreshToken(userId, request, reply, prisma)) {
+    reply.status(500).send({ message: 'Failed to create refresh token' });
     return;
   }
 
@@ -169,8 +175,11 @@ export const createGuestAccount : ApiMessageHandler = async (
 
   if (!user) return; // Error already sent to client
 
-  if (!await generateCookie(user.ID, prisma, reply, fastify))
-    return;
+  // if (!await generateCookie(user.ID, prisma, reply, fastify))
+  //   return;
+  reply.clearCookie('jwt');
+  generateShortLivedJWT(user.ID, reply);
+
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
   reply.status(200).send({ message: "Created new guest user ", user: {email: user.Email, alias: user.Alias, userID: user.ID, guestLogin: true}});
 };
