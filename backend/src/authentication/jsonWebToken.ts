@@ -1,13 +1,16 @@
 import crypto from 'crypto';
+import { RefreshToken } from './refreshToken';
+
 
 export const JWT_SECRET = process.env.JWT_SECRET || (() => {
   throw new Error('JWT_SECRET environment variable is required');
 })();
 
 export const TOKEN_TIMES = {
-  TMP_TOKEN_MS: 90000, // 1.5 minutes for 2FA verification
+  REGISTRATION_TOKEN_MS: 90000, // 1.5 minutes for 2FA verification
   SHORT_LIVED_TOKEN_MS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60 * 1000,
-  REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000
+  SHORT_LIVED_TOKEN_SECONDS: (parseInt(process.env.JWT_ACCESS_TOKEN_MINUTES ?? "15", 10)) * 60,
+  REFRESH_TOKEN_MS: (parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10)) * 24 * 60 * 60 * 1000,
 };
 
 interface JWTHeader {
@@ -48,7 +51,7 @@ function base64UrlEncode(obj: JWTHeader | JWTPayload): string {
     .replace(/\//g, '_');
 }
 
-export function verifyAndDecodeJWT(token: string, secret: string): JWTPayload {
+export function verifyAndDecodeJWT(token: string): JWTPayload {
   const parts: string[] = token.split('.');
   if (parts.length !== 3) {
     throw new Error('Invalid JWT format');
@@ -58,7 +61,7 @@ export function verifyAndDecodeJWT(token: string, secret: string): JWTPayload {
 
   const signatureBase: string = `${encodedHeader}.${encodedPayload}`;
   const expectedSignature: string = crypto
-    .createHmac('sha256', secret)
+    .createHmac('sha256', JWT_SECRET)
     .update(signatureBase)
     .digest('base64')
     .replace(/=/g, '')
@@ -71,24 +74,85 @@ export function verifyAndDecodeJWT(token: string, secret: string): JWTPayload {
 
   const payload: JWTPayload = JSON.parse(base64UrlDecode(encodedPayload)) as JWTPayload;
 
-  console.log('\n\nJWT payload:', payload, 'Current time:', Math.floor(Date.now() / 1000));
-
-  if (payload.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error('Token expired');
-  }
 
   return payload;
 }
 
-export function decodeJWT(token: string, secret: string): JWTPayload | null {
+export function decodeJWT(token: string): JWTPayload | null {
   try {
-    return verifyAndDecodeJWT(token, secret);
+    const payload = verifyAndDecodeJWT(token);
+
+    console.log('\n\nJWT payload:', payload, 'Current time:', Math.floor(Date.now() / 1000));
+
+    if (payload.exp < Math.floor(Date.now() / 1000)) {
+      throw new Error('Token expired');
+    }
+
+    return payload;
   } catch (e) {
     console.error('Failed to decode JWT:', (e as Error).message);
     return null;
   }
 }
 
+async function authenticateUserBase(request: any, reply: any, prisma: any) {
+  const payload: JWTPayload | null = decodeJWT(request.cookies.jwtReg);
+  const now: number = Math.floor(Date.now() / 1000);
+  if (payload && payload.exp - payload.iat <= TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS) {
+    return payload;
+  }
+
+  if (payload == null) {
+    reply.clearCookie('jwt');
+    return null;
+  }
+ 
+  // JWT expired, check refresh token
+  const userId = payload.sub;
+  // now = Math.floor(Date.now() / 1000);
+  if (userId) {
+    const refreshSuccess = await RefreshToken(userId, request, reply, prisma);
+    if (refreshSuccess) {
+      const newJwt = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS);
+      const newPayload = decodeJWT(newJwt);
+      if (newPayload && newPayload.exp >= now) {
+        reply.cookie('jwt', newJwt, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS });
+        return newPayload;
+      }
+    }
+  }
+  return null;
+}
+
+// Exported wrapper for normal session (10 min JWT)
+export async function authenticateUserSession(request: any, reply: any, prisma: any, secret: string): Promise<JWTPayload | null> {
+  // return authenticateUserBase(request, reply, prisma, secret, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
+  const payload = await authenticateUserBase(request, reply, prisma);
+  if (payload) {
+    return payload;
+  }
+
+  reply.clearCookie('jwt');
+  reply.status(401).send({ message: 'Authentication required' });
+  return null;
+}
+
+// // Exported wrapper for registration/2FA (90 sec JWT)
+// export function authenticateUserRegistration(request: any, reply: any, prisma: any, userID: number): boolean {
+//   if (validateShortLivedJWT(request, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_MS / 1000)) {
+//     return true;
+//   }
+//   reply.clearCookie('jwtReg');
+//   reply.status(401).send({ message: 'Authentication required' });
+//   return false;
+// }
+
+export function generateRegistrationJWT(userId: number, reply: any) {
+  const token = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_MS / 1000);
+  reply.cookie('jwtReg', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.REGISTRATION_TOKEN_MS });
+}
+
+// all calls to this function can remove the secret because it will be scoped to this file.
 export function generateJWT(userId: number, secret: string, expiresInSeconds: number): string {
   const header: JWTHeader = { alg: 'HS256', typ: 'JWT' };
   const currentTime: number = Math.floor(Date.now() / 1000);

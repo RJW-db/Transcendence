@@ -52,27 +52,10 @@ export async function RefreshToken(userID: number, request: FastifyRequest, repl
         return true;
     }
 
-    const rawToken: string = crypto.randomBytes(32).toString('hex');
-    const hashedToken: string = crypto.createHash('sha256').update(rawToken).digest('hex');
-
-    const db = createSafePrisma(prisma, reply, request.server, {
-        P2025: 'Refresh token not found'
-    });
-
-    const updated = await db.jWTRefreshToken.update({
-        where: { userId: userID },
-        data: { tokenHash: hashedToken, revoked: false }
-    });
-
-    if (!updated) {
-        return false;
-    }
-
-    reply.cookie('refreshToken', rawToken, { maxAge: TOKEN_TIMES.REFRESH_TOKEN_MS, httpOnly: true });
-    return true;
+    return await createRefreshToken(userID, request, reply, prisma);
 }
 
-async function safeDeleteToken(  db: PrismaClient,
+async function safeDeleteToken( db: PrismaClient,
   userID: number,
   retries: number
 ): Promise<boolean> {

@@ -2,7 +2,7 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from '../authentication/hashPasswords';
 import { verifyToken, generateTOTPsecret } from '../authentication/TOTP'
 import { generateCookie } from './accountUtils'
-import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT, generateRegistrationJWT, authenticateUserSession } from '../authentication/jsonWebToken';
 import { createSafePrisma } from '../utils/prismaHandle';
 import { PrismaClient } from '@prisma/client';
 import { createRefreshToken } from '../authentication/refreshToken';
@@ -53,14 +53,15 @@ export const handleRegister: ApiMessageHandler = async (
       Online: true,
       CreationDate: new Date(),
       OauthLogin: payload.oauthLogin ?? false,
+      pendingAccount: true,
     },
   });
 
   if (!user) return; // Error already sent to client
 
-  let tmpToken = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.TMP_TOKEN_MS / 1000);
-  reply.cookie('tempAuth', tmpToken);
-
+  // let Token = generateJWT(user.ID, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_MS / 1000);
+  // reply.cookie('jwtReg', Token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.REGISTRATION_TOKEN_MS });
+  generateRegistrationJWT(user.ID, reply);
 
   fastify.log.info(`Registered new user: ${JSON.stringify(user)}`);
   reply.status(200).send({ message: "User registered, please verify 2FA code", userID: user.ID, secret: secret , userEmail: user.Email});
@@ -88,13 +89,14 @@ export const handleRegisterTotp: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
-  const tempToken : string | undefined = request.cookies.tempAuth;
+  const tempToken : string | undefined = request.cookies.jwtReg;
   if (!tempToken) {
     console.log("No temp token found in cookies");
     reply.status(401).send({ message: 'Session expired' });
     return;
   }
-  const decoded = decodeJWT(tempToken, JWT_SECRET);
+
+  const decoded = decodeJWT(tempToken);
   if (!decoded) {
     console.log("Failed to decode temp token");
     reply.status(401).send({ message: 'Session expired' });
@@ -116,13 +118,10 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
-  const refreshSuccess = await createRefreshToken(user.ID, request, reply, prisma);
-  if (!refreshSuccess) {
+  reply.clearCookie('jwtReg');
+  if (!await authenticateUserSession(request, reply, prisma, JWT_SECRET)) {
     return;
   }
-
-  if (!await generateCookie(user.ID, prisma, reply, fastify))
-    return;
 
   user = await db.user.update({
     where: { ID: user.ID },
@@ -134,7 +133,7 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
-  reply.clearCookie('tempAuth');
+  // reply.clearCookie('tempAuth');
   fastify.log.info(`Created new user: ${JSON.stringify(user)}`);
   
   reply.status(200).send({ message: "Created new user with email: " + user.Email, user: {email: user.Email, alias: user.Alias, userID: user.ID}});

@@ -15,7 +15,7 @@
 //       return reply.status(401).send({ error: 'token_expired', message: 'No authentication token' });
 //     }
 
-//     const decoded = decodeJWT(token, JWT_SECRET);
+//     const decoded = decodeJWT(token);
 //     if (!decoded) {
 //       return reply.status(401).send({ error: 'token_expired', message: 'Invalid or expired token' });
 //     }

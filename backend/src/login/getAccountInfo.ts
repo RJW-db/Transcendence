@@ -10,7 +10,7 @@ export const getCurrentLoginInfo: ApiMessageHandler = async (
   reply
 ) => {
     fastify.log.info(`Handling getUserInfo request`);
-    const decoded = decodeJWT(payload.tempToken, JWT_SECRET);
+    const decoded = decodeJWT(payload.tempToken);
     if (!decoded) {
       reply.status(401).send({ message: 'Session expired' });
       return;

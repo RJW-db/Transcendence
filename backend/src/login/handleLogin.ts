@@ -52,7 +52,7 @@ export const handleLoginTotp: ApiMessageHandler = async (
     reply.status(401).send({ message: 'cookie session expired' });
     return;
   }
-  const decoded = decodeJWT(tempToken, JWT_SECRET);
+  const decoded = decodeJWT(tempToken);
   if (!decoded) {
     reply.status(401).send({ message: 'Session expired' });
     return;
