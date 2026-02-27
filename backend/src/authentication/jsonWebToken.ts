@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { RefreshToken } from './refreshToken';
+import { refreshUserToken } from './refreshToken';
 
 
 export const JWT_SECRET = process.env.JWT_SECRET || (() => {
@@ -96,7 +96,6 @@ export function decodeJWT(token: string): JWTPayload | null {
 }
 
 async function authenticateUserBase(request: any, reply: any, prisma: any) {
-  // const payload: JWTPayload | null = decodeJWT(request.cookies.jwtReg);
   const payload: JWTPayload | null = decodeJWT(request.cookies.jwt);
   const now: number = Math.floor(Date.now() / 1000);
   if (payload && payload.exp - payload.iat <= TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS) {
@@ -104,49 +103,39 @@ async function authenticateUserBase(request: any, reply: any, prisma: any) {
   }
 
   if (payload == null) {
-    reply.clearCookie('jwt');
     return null;
   }
  
-  // JWT expired, check refresh token
   const userId = payload.sub;
-  // now = Math.floor(Date.now() / 1000);
-  if (userId) {
-    const refreshSuccess = await RefreshToken(userId, request, reply, prisma);
-    if (refreshSuccess) {
-      const newJwt = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS);
-      const newPayload = decodeJWT(newJwt);
-      if (newPayload && newPayload.exp >= now) {
-        reply.cookie('jwt', newJwt, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS });
-        return newPayload;
-      }
-    }
+  const refreshSuccess = await refreshUserToken(userId, request, reply, prisma);
+  if (refreshSuccess) {
+    const newJwt = generateShortLivedJWT(userId, reply);
+    return decodeJWT(newJwt);
   }
   return null;
 }
 
 // Exported wrapper for normal session (10 min JWT)
 export async function authenticateUserSession(request: any, reply: any, prisma: any): Promise<JWTPayload | null> {
-  // return authenticateUserBase(request, reply, prisma, secret, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
   const payload = await authenticateUserBase(request, reply, prisma);
   if (payload) {
     return payload;
   }
 
   reply.clearCookie('jwt');
-  reply.status(401).send({ message: 'Authentication required' });
+  // reply.status(401).send({ message: 'Authentication required' });
   return null;
 }
 
-// // Exported wrapper for registration/2FA (90 sec JWT)
-// export function authenticateUserRegistration(request: any, reply: any, prisma: any, userID: number): boolean {
-//   if (validateShortLivedJWT(request, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_MS / 1000)) {
-//     return true;
-//   }
-//   reply.clearCookie('jwtReg');
-//   reply.status(401).send({ message: 'Authentication required' });
-//   return false;
-// }
+export async function authenticateUserRegistration(userID: number, request: any, reply: any, prisma: any): Promise<boolean> {
+  const refreshSuccess = await refreshUserToken(userID, request, reply, prisma);
+  if (!refreshSuccess) {
+    return false;
+  }
+  generateShortLivedJWT(userID, reply);
+  reply.clearCookie('jwtReg');
+  return true;
+}
 
 export function generateRegistrationJWT(userId: number, reply: any) {
   const token = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.REGISTRATION_TOKEN_SECONDS);
@@ -156,6 +145,7 @@ export function generateRegistrationJWT(userId: number, reply: any) {
 export function generateShortLivedJWT(userId: number, reply: any) {
   const token = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS);
   reply.cookie('jwt', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS });
+  return token;
 }
 
 // all calls to this function can remove the secret because it will be scoped to this file.

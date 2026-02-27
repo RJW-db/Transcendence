@@ -2,11 +2,10 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { hashPassword } from '../authentication/hashPasswords';
 import { verifyToken, generateTOTPsecret } from '../authentication/TOTP'
 import { generateCookie } from './accountUtils'
-import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT, generateRegistrationJWT, authenticateUserSession, generateShortLivedJWT } from '../authentication/jsonWebToken';
+import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT, generateRegistrationJWT, authenticateUserRegistration, generateShortLivedJWT } from '../authentication/jsonWebToken';
 import { createSafePrisma } from '../utils/prismaHandle';
 import { PrismaClient } from '@prisma/client';
-import { createRefreshToken } from '../authentication/refreshToken';
-
+import { refreshUserToken } from '../authentication/refreshToken';
 
 export const handleRegister: ApiMessageHandler = async (
   payload: { Alias: string; Email: string; Password: string; oauthLogin?: boolean },
@@ -98,6 +97,7 @@ export const handleRegisterTotp: ApiMessageHandler = async (
 
   const decoded = decodeJWT(tempToken);
   if (!decoded) {
+    reply.clearCookie('jwtReg');
     console.log("Failed to decode temp token");
     reply.status(401).send({ message: 'Session expired' });
     return;
@@ -118,16 +118,18 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   }
 
-  // if (!await authenticateUserSession(request, reply, prisma)) {
-  //   return;
-  // }
-
-  reply.clearCookie('jwtReg');
-  generateShortLivedJWT(userId, reply); // sets the jwt cookie
-  if (!await createRefreshToken(userId, request, reply, prisma)) {
-    reply.status(500).send({ message: 'Failed to create refresh token' });
+  if (!await authenticateUserRegistration(userId, request, reply, prisma)) {
     return;
   }
+
+  // reply.clearCookie('jwtReg');
+  // generateShortLivedJWT(userId, reply); // sets the jwt cookie
+  // if (!await RefreshUserToken(userId, request, reply, prisma)) {
+  //   if (!reply.sent) {
+  //       reply.status(500).send({ message: 'Failed to create refresh token' });
+  //   }
+  //   return;
+  // }
 
   user = await db.user.update({
     where: { ID: user.ID },

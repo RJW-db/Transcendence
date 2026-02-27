@@ -4,7 +4,7 @@ import { verifyPassword } from '../authentication/hashPasswords';
 import { verifyToken } from '../authentication/TOTP'
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT, authenticateUserSession, generateShortLivedJWT, generateRegistrationJWT } from '../authentication/jsonWebToken';
 import { createSafePrisma } from '../utils/prismaHandle';
-import { createRefreshToken } from '../authentication/refreshToken';
+import { refreshUserToken } from '../authentication/refreshToken';
 
 
 export const handleLoginPassword: ApiMessageHandler = async (
