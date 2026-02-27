@@ -17,11 +17,14 @@ import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { ErrorHandler } from './utils/errorHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
+import { initializeDatabase, closeDatabase } from './database/database';
 
 
 const fastify = Fastify({
   logger: true // Enable logger for better development experience
 });
+
+initializeDatabase(fastify);
 
 // export fastiftCookieOptions
 export const fastifyCookieOptions: FastifyCookieOptions = {
@@ -257,7 +260,7 @@ async function gracefulShutdown(signal: string) {
 
     // 4. Close database connections
     fastify.log.info('Closing database connections...');
-    await prisma.$disconnect();
+    await closeDatabase();
 
     fastify.log.info('Graceful shutdown completed');
     process.exit(0);

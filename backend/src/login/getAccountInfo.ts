@@ -1,6 +1,6 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
-import { createSafePrisma } from '../utils/prismaHandle';
+import { db } from '../database/database';
 
 export const getCurrentLoginInfo: ApiMessageHandler = async (
   payload,
@@ -16,12 +16,8 @@ export const getCurrentLoginInfo: ApiMessageHandler = async (
       return;
     }
     const userId = decoded.sub;
-    
-    const db = createSafePrisma(prisma, reply, fastify, {
-      P2025: 'User not found'
-    });
-    const user = await db.user.findUnique({ where: { ID: userId } });
-    if (!user) {
+    const user = await db.findUser({ ID: userId }, reply, { messages: { P2025: 'User not found' }, autoReply: true });
+    if (!db.isDatabaseOperationSuccessful() || !user) {
       return;
     }
 

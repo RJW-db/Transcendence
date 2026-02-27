@@ -107,7 +107,7 @@ async function authenticateUserBase(request: any, reply: any, prisma: any) {
   }
  
   const userId = payload.sub;
-  const refreshSuccess = await refreshUserToken(userId, request, reply, prisma);
+  const refreshSuccess = await refreshUserToken(userId, request, reply);
   if (refreshSuccess) {
     const newJwt = generateShortLivedJWT(userId, reply);
     return decodeJWT(newJwt);
@@ -128,7 +128,7 @@ export async function authenticateUserSession(request: any, reply: any, prisma: 
 }
 
 export async function authenticateUserRegistration(userID: number, request: any, reply: any, prisma: any): Promise<boolean> {
-  const refreshSuccess = await refreshUserToken(userID, request, reply, prisma);
+  const refreshSuccess = await refreshUserToken(userID, request, reply);
   if (!refreshSuccess) {
     return false;
   }

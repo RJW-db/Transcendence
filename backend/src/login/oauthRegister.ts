@@ -3,7 +3,7 @@ import {verifyToken, generateTOTPsecret} from '../authentication/TOTP'
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { handleLoginPassword, oauthLogin } from './handleLogin';
 import { handleRegister, handleRegisterTotp } from './handleRegister';
-import { createSafePrisma } from '../utils/prismaHandle';
+import { db } from '../database/database';
 
 export const handleOauthToken: ApiMessageHandler = async (
   payload: { Token: string },
@@ -17,14 +17,8 @@ export const handleOauthToken: ApiMessageHandler = async (
       return;
   }
 
-  const db = createSafePrisma(prisma, reply, fastify, {
-    P2025: 'User not found'
-  });
-
-  const user = await db.user.findFirst({
-    where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }
-  });
-
+  const user = await db.findUser({ OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }, reply, { messages: { P2025: 'User not found' }, autoReply: true });
+  if (!db.isDatabaseOperationSuccessful()) return;
   if (user) {
     if (user.OauthLogin === true) {
       const input = { Email: userInfo.email, Password: 'oauth_placeholder'};
