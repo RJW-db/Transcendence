@@ -2,6 +2,46 @@ import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
 import {getCurrentUserId} from './getAccountInfo';
 import { hashPassword } from '../authentication/hashPasswords';
+import {FastifyRequest, FastifyInstance, FastifyReply} from 'fastify';
+import { PrismaClient } from '@prisma/client';
+
+
+
+
+export async function updateUserImage(request : FastifyRequest, prisma : PrismaClient, fastify : FastifyInstance, reply : FastifyReply) {
+    const userId = await getCurrentUserId(request, reply);
+    if (!userId)
+        return; 
+    const user = await prisma.user.findUnique({ where: { ID: userId } });
+    if (!user) {
+        reply.status(400).send({ message: 'User not found' });
+        return;
+    }
+	const data = await request.file();
+	if (!data) {
+		fastify.log.error('No file received in multipart/form-data request');
+        reply.status(400).send({ message: 'No file received in multipart/form-data request' });
+		return;
+	}
+    const dataBuffer : Uint8Array<ArrayBuffer> = await data.toBuffer() as Uint8Array<ArrayBuffer>;
+    if (dataBuffer.length > 5 * 1024 * 1024) { // Limit file size to 5MB
+        fastify.log.error('File size exceeds limit of 5MB');
+        reply.status(400).send({ message: 'File size exceeds limit of 5MB' });
+        return;
+    }
+    const updatedUser = await prisma.user.update({
+        where: { ID: userId },
+        data: {
+            ProfilePicture: dataBuffer,
+        },
+    });
+    if (!updatedUser) {
+        reply.status(500).send({ message: 'Failed to update user profile picture' });
+        return;
+    }
+    reply.send({ message: 'User profile picture updated successfully' });
+}
+
 
 
 export const updateUserProfile: ApiMessageHandler = async (

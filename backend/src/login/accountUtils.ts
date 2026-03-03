@@ -21,9 +21,9 @@ export async function getGoogleUserInfo(token: string, fastify: FastifyInstance,
 }
 
 export async function generateCookie(userId: number, prisma: PrismaClient, reply: FastifyReply, fastify: FastifyInstance): Promise<boolean> {
-  const sessionJWT = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.SHORT_LIVED_TOKEN_MS / 1000);
+  const sessionJWT = generateJWT(userId, JWT_SECRET, TOKEN_TIMES.REFRESH_TOKEN_MS / 1000);
 
-  reply.cookie('auth', sessionJWT, { maxAge: TOKEN_TIMES.SHORT_LIVED_TOKEN_MS, httpOnly: true });
+  reply.cookie('auth', sessionJWT, { maxAge: TOKEN_TIMES.REFRESH_TOKEN_MS, httpOnly: true });
 
   fastify.log.info(`Created cookie in DB for user ID: ${userId}`);
   return true;

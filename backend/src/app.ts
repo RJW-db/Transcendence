@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
+import fastifyMultipart from '@fastify/multipart';
 import { Server } from 'socket.io';
 import { Socket } from 'socket.io';
 import { fork, ChildProcess } from 'child_process';
@@ -28,6 +29,7 @@ export const fastifyCookieOptions: FastifyCookieOptions = {
     parseOptions: {}     // options for parsing cookies
   };
 fastify.register(cookie, fastifyCookieOptions); 
+fastify.register(fastifyMultipart);
 
 
 // When fastify is ready, initialize Socket.IO
@@ -171,11 +173,34 @@ io.on('connection', (socket: MySocket) => {
 
 console.log('Socket.IO initialized');
 
-
+async function receiveMultipartData(request: FastifyRequest) {
+	const data = await request.file();
+	if (!data) {
+		fastify.log.error('No file received in multipart/form-data request');
+		return null;
+	}
+	console.log('Received file:', await data.toBuffer());
+	
+	console.log('File details - filename:', data.filename, 'mimetype:', data.mimetype, 'encoding:', data.encoding);
+	// console.log("binary data:", data.file);
+}
 
 //fastify.register(async function (fastify: FastifyInstance) {
 fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 	try{
+		if (request.headers['content-type'] !== 'application/json') {
+			if (request.headers['content-type']?.indexOf('multipart/form-data') !== -1) {
+				console.log('Received multipart/form-data request');
+				// Handle multipart/form-data if needed, or return an error if not supported
+				receiveMultipartData(request);
+				// receiveMultipartData(request);
+				reply.status(400).send({ message: 'Multipart/form-data is not supported for this endpoint' });
+				return;
+			}
+			console.log('Invalid content type:', request.headers['content-type']);
+			reply.status(400).send({ message: 'Content-Type must be application/json' });
+			return;
+		}
         const	data = request.body as any;
         console.log('=== API REQUEST RECEIVED ===');
         console.log('Request body:', JSON.stringify(data));

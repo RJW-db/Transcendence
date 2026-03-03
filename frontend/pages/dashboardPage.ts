@@ -101,24 +101,38 @@ async function editUserProfile(container : HTMLDivElement)
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
         const fileUploadInput = container.querySelector('#profilePicture') as HTMLInputElement | null;
-        let profilePictureData: string | null = null;
+        let profilePictureData: Blob | null = null;
         
         if (fileUploadInput && fileUploadInput.files && fileUploadInput.files.length === 1) {
             const image = fileUploadInput.files[0];
-            profilePictureData = await new Promise((resolve) => {
-                const fileReader = new FileReader();
-                fileReader.onload = (fileReaderEvent: ProgressEvent<FileReader>) => {
-                    console.log("binary data results in image:", fileReader.result);
-                    const profilePicture = container.querySelector('#profilePicturePreview') as HTMLDivElement | null;
-                    if (profilePicture && fileReaderEvent.target && typeof fileReaderEvent.target.result === 'string') {
-                        profilePicture.style.backgroundImage = `url(${fileReaderEvent.target.result})`;
-                    }
-                    resolve(fileReaderEvent.target?.result as string);
-                };
-                fileReader.readAsDataURL(image);
-
-                console.log('Reading profile picture file');
+            // profilePictureData = await new Promise((resolve) => {
+            //     const fileReader = new FileReader();
+            //     fileReader.onload = (fileReaderEvent: ProgressEvent<FileReader>) => {
+            //         console.log("binary data results in image:", fileReader.result);
+            //         const profilePicture = container.querySelector('#profilePicturePreview') as HTMLDivElement | null;
+            //         if (profilePicture && fileReaderEvent.target && typeof fileReaderEvent.target.result === 'string') {
+            //             profilePicture.style.backgroundImage = `url(${fileReaderEvent.target.result})`;
+            //         }
+            //         resolve(blob);
+            //     };
+            //     fileReader.readAsDataURL(image);
+            //     console.log('Reading profile picture file');
+            // });
+            const formData = new FormData();
+            formData.append('type', 'updateUserProfilePicture');
+            formData.append('profilePicture', image, image.name);
+            const profilePictureResponse = await fetchWithJWTRefresh('/api', {
+                method: 'POST',
+                body: formData,
             });
+            const result = response.json();
+            if (profilePictureResponse.ok) {
+                console.log('Profile picture updated successfully');
+            }
+            else
+            {
+                console.error('Failed to update profile picture:', result.message);
+            }
         } else {
             console.log('No profile picture file selected');
         }
@@ -130,7 +144,7 @@ async function editUserProfile(container : HTMLDivElement)
             errorBox.classList.remove('hidden');
             return false;
         }
-        const response = await submitProfileUpdate(alias, profilePictureData, email, password);
+        const response = await submitProfileUpdate(alias, email, password);
         if (response.ok) {
             console.log('Profile updated successfully');
             loadDashboard(container);
@@ -156,7 +170,7 @@ async function editUserProfile(container : HTMLDivElement)
 
 }
 
-async function submitProfileUpdate(alias: string, profilePictureData: string | null, email: string, password: string) {
+async function submitProfileUpdate(alias: string, email: string, password: string) {
     
     const response = await fetchWithJWTRefresh('/api', {
         method: 'POST',
@@ -169,7 +183,6 @@ async function submitProfileUpdate(alias: string, profilePictureData: string | n
                 Alias: alias,
                 Email: email,
                 Password: password,
-                ProfilePicture: profilePictureData ? profilePictureData : null
             }
         }),
     });
