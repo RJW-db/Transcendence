@@ -1,5 +1,7 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
+import { get } from 'node:http';
 
 export const getLoginInfo: ApiMessageHandler = async (
   payload: { userID: number },
@@ -38,19 +40,26 @@ export const getCurrentLoginInfo: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
+  const userId = await getCurrentUserId(request, reply);
+  if (!userId) {
+    return; // getCurrentUserId already sent the response
+  }
+  getLoginInfo({ userID: userId }, request, prisma, fastify, reply);
+
+}
+
+export async function getCurrentUserId(request: FastifyRequest, reply : FastifyReply) : Promise<number> {
   const jwtCookie = request.cookies.auth;
   if (!jwtCookie) {
     reply.status(401).send({ message: 'Not authenticated' });
-    return;
+    return 0;
   }
 
   const decoded = decodeJWT(jwtCookie, JWT_SECRET);
   if (!decoded) {
     reply.status(401).send({ message: 'Session expired' });
-    return;
+    return 0;
   }
   const userId : number = decoded.sub;
-  getLoginInfo({ userID: userId }, request, prisma, fastify, reply);
-
+  return userId;
 }
-

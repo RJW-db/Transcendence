@@ -72,7 +72,7 @@ async function register() {
 	}
 	dataid = 1;
 }
-register();
+// register();
 
 const gameManager = new GameWorkerManager(io, prisma);
 // const tournamentManager = new TournamentManager(gameManager, io);
