@@ -17,6 +17,7 @@ import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
+import { updateUserImage } from './login/updateUserProfile';
 
 
 const fastify = Fastify({
@@ -173,28 +174,26 @@ io.on('connection', (socket: MySocket) => {
 
 console.log('Socket.IO initialized');
 
-async function receiveMultipartData(request: FastifyRequest) {
-	const data = await request.file();
-	if (!data) {
-		fastify.log.error('No file received in multipart/form-data request');
-		return null;
-	}
-	console.log('Received file:', await data.toBuffer());
+// async function receiveMultipartData(request: FastifyRequest) {
+// 	const data = await request.file();
+// 	if (!data) {
+// 		fastify.log.error('No file received in multipart/form-data request');
+// 		return null;
+// 	}
+// 	console.log('Received file:', await data.toBuffer());
 	
-	console.log('File details - filename:', data.filename, 'mimetype:', data.mimetype, 'encoding:', data.encoding);
-	// console.log("binary data:", data.file);
-}
+// 	console.log('File details - filename:', data.filename, 'mimetype:', data.mimetype, 'encoding:', data.encoding);
+// 	// console.log("binary data:", data.file);
+// }
 
 //fastify.register(async function (fastify: FastifyInstance) {
 fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 	try{
 		if (request.headers['content-type'] !== 'application/json') {
 			if (request.headers['content-type']?.indexOf('multipart/form-data') !== -1) {
-				console.log('Received multipart/form-data request');
 				// Handle multipart/form-data if needed, or return an error if not supported
-				receiveMultipartData(request);
+				updateUserImage(request, prisma, fastify, reply);
 				// receiveMultipartData(request);
-				reply.status(400).send({ message: 'Multipart/form-data is not supported for this endpoint' });
 				return;
 			}
 			console.log('Invalid content type:', request.headers['content-type']);

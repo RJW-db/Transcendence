@@ -63,3 +63,22 @@ export async function getCurrentUserId(request: FastifyRequest, reply : FastifyR
   const userId : number = decoded.sub;
   return userId;
 }
+export const getProfilePicture: ApiMessageHandler = async (
+  payload: { userID: number },
+  request,
+  prisma,
+  fastify,
+  reply
+) => {
+    const user = await prisma.user.findUnique({ where: { ID: payload.userID } });
+  if (!user) {
+    reply.status(400).send({ message: 'User not found' });
+    return;
+  }
+  if (!user.ProfilePicture) {
+    reply.status(404).send({ message: 'Profile picture not found' });
+    return;
+  }
+  const imageBuffer = Buffer.from(user.ProfilePicture);
+  reply.code(200).type('image/png').send(imageBuffer);
+}

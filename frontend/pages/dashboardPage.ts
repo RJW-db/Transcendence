@@ -27,18 +27,17 @@ export async function dashboardPage() {
             editProfileForm.classList.remove('hidden');
             editUserProfile(container);
         }
-        else
-        {
+        else {
             if (!dashboardInfo) console.error('Failed to find dashboard info element');
             if (!editProfileForm) console.error('Failed to find edit profile form element');
         }
     });
-    
+
     return container;
 }
 
 async function loadDashboard(container: HTMLDivElement) {
-const response = await fetchWithJWTRefresh('/api', {
+    const response = await fetchWithJWTRefresh('/api', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -82,17 +81,43 @@ const response = await fetchWithJWTRefresh('/api', {
     if (onlineStatusElement) onlineStatusElement.textContent = result.user.Online === 'true' ? 'Online' : 'Offline';
     if (accountTypeElement) accountTypeElement.textContent = result.user.AccountType;
     if (gamesWonElement) gamesWonElement.textContent = result.user.GamesWon.toString();
-
-    const profilePictureElement = container.querySelector('#profilePicture');
-    if (profilePictureElement && result.user.ProfilePicture) {
-        const blob = new Blob([new Uint8Array(result.user.ProfilePicture.data)], { type: 'image/png' });
-        const url = URL.createObjectURL(blob);
-        profilePictureElement.innerHTML = `<img src="${url}" alt="Profile Picture" class="w-24 h-24 rounded-full object-cover">`;
+    console.log('User info displayed on dashboard');
+    const profilePictureResponse = await fetchWithJWTRefresh('/api', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'getProfilePicture',
+            Payload: {
+                userID: result.user.ID,
+            }
+        }),
+    });
+    console.log('Profile picture response:', profilePictureResponse);
+    if (!profilePictureResponse.ok) {
+        console.error('Failed to fetch profile picture:', profilePictureResponse.statusText);
+        return container;
     }
+    const profilePictureElement = container.querySelector('#profilePicture') as HTMLDivElement | null;
+    if (!profilePictureElement) {
+        console.error('Failed to find profile picture element');
+        return container;
+    }
+    const imageBlob = await profilePictureResponse.blob();
+    const imageUrl = URL.createObjectURL(imageBlob);
+    profilePictureElement.innerHTML = '';
+    const img = document.createElement('img');
+    console.log('Profile picture URL:', imageUrl);
+    console.log("profile picture size:", imageBlob.size, "bytes");
+    img.src = imageUrl;
+    img.alt = 'Profile Picture';
+    img.className = 'w-32 h-32 rounded-full object-cover';
+    profilePictureElement.appendChild(img);
+    console.log('Profile picture displayed on dashboard');
 }
 
-async function editUserProfile(container : HTMLDivElement)
-{
+async function editUserProfile(container: HTMLDivElement) {
     const form = container.querySelector('#profileForm') as HTMLFormElement;
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -100,24 +125,19 @@ async function editUserProfile(container : HTMLDivElement)
         const alias = formData.get('alias') as string;
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
-        const fileUploadInput = container.querySelector('#profilePicture') as HTMLInputElement | null;
+        const fileUploadInput = container.querySelector('#profilePictureUpload') as HTMLInputElement | null;
+        if (!fileUploadInput) {
+            console.error('Failed to find profile picture input element');
+        }
+        else
+        {
+            console.log('Profile picture input element found:', fileUploadInput);
+            console.log('Selected file:', fileUploadInput.files ? fileUploadInput.files[0] : 'No file selected');
+        }
         let profilePictureData: Blob | null = null;
-        
+
         if (fileUploadInput && fileUploadInput.files && fileUploadInput.files.length === 1) {
             const image = fileUploadInput.files[0];
-            // profilePictureData = await new Promise((resolve) => {
-            //     const fileReader = new FileReader();
-            //     fileReader.onload = (fileReaderEvent: ProgressEvent<FileReader>) => {
-            //         console.log("binary data results in image:", fileReader.result);
-            //         const profilePicture = container.querySelector('#profilePicturePreview') as HTMLDivElement | null;
-            //         if (profilePicture && fileReaderEvent.target && typeof fileReaderEvent.target.result === 'string') {
-            //             profilePicture.style.backgroundImage = `url(${fileReaderEvent.target.result})`;
-            //         }
-            //         resolve(blob);
-            //     };
-            //     fileReader.readAsDataURL(image);
-            //     console.log('Reading profile picture file');
-            // });
             const formData = new FormData();
             formData.append('type', 'updateUserProfilePicture');
             formData.append('profilePicture', image, image.name);
@@ -125,35 +145,42 @@ async function editUserProfile(container : HTMLDivElement)
                 method: 'POST',
                 body: formData,
             });
-            const result = response.json();
+            const result = await profilePictureResponse.json();
             if (profilePictureResponse.ok) {
                 console.log('Profile picture updated successfully');
             }
-            else
-            {
+            else {
                 console.error('Failed to update profile picture:', result.message);
             }
-        } else {
-            console.log('No profile picture file selected');
+            if (!profilePictureResponse.ok) {
+                const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
+                errorBox.textContent = 'Failed to update profile picture.';
+                errorBox.classList.remove('hidden');
+            }
+            if (!alias && !email && !password) {
+                console.log('Profile updated successfully');
+                loadDashboard(container);
+                return;
+            }
         }
-
-        if (!alias && !email && !password && !profilePictureData) {
+        else if (!alias && !email && !password) {
             const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
             errorBox.textContent = 'Please provide at least one field to update.';
             console.log('No fields to update');
             errorBox.classList.remove('hidden');
             return false;
         }
-        const response = await submitProfileUpdate(alias, email, password);
-        if (response.ok) {
-            console.log('Profile updated successfully');
-            loadDashboard(container);
-        } else {
-            const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
-            errorBox.textContent = 'Failed to update profile.';
-            errorBox.classList.remove('hidden');
+        if (alias || email || password) {
+            const response = await submitProfileUpdate(alias, email, password);
+            if (response.ok) {
+                console.log('Profile updated successfully');
+                loadDashboard(container);
+            } else {
+                const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
+                errorBox.textContent = 'Failed to update profile.';
+                errorBox.classList.remove('hidden');
+            }
         }
-
     });
 
     const cancelBtn = container.querySelector('#cancelEditBtn') as HTMLButtonElement;
@@ -171,7 +198,7 @@ async function editUserProfile(container : HTMLDivElement)
 }
 
 async function submitProfileUpdate(alias: string, email: string, password: string) {
-    
+
     const response = await fetchWithJWTRefresh('/api', {
         method: 'POST',
         headers: {

@@ -29,6 +29,7 @@ export async function updateUserImage(request : FastifyRequest, prisma : PrismaC
         reply.status(400).send({ message: 'File size exceeds limit of 5MB' });
         return;
     }
+    fastify.log.info(`Received profile picture update for user ID ${userId}, size: ${dataBuffer.length} bytes`);
     const updatedUser = await prisma.user.update({
         where: { ID: userId },
         data: {
@@ -39,6 +40,7 @@ export async function updateUserImage(request : FastifyRequest, prisma : PrismaC
         reply.status(500).send({ message: 'Failed to update user profile picture' });
         return;
     }
+    console.log(`Updated profile picture for user ID ${userId}, new size: ${updatedUser.ProfilePicture ? updatedUser.ProfilePicture.length : 0} bytes`);
     reply.send({ message: 'User profile picture updated successfully' });
 }
 
