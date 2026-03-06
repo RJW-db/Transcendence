@@ -15,7 +15,8 @@ import { serverHandler } from './handlers/server.handler';
 import { GameWorkerManager } from './engine/workerManager';
 import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
-import { directMessageHandler } from './handlers/directMessageHandlers';
+import { directMessageHandler } from './handlers/directMessageHandler';
+import { friendRequestHandler } from './handlers/friendRequestHandler';
 
 
 const fastify = Fastify({
@@ -78,7 +79,10 @@ const gameManager = new GameWorkerManager(io, prisma);
 
 io.on('connection', (socket: MySocket) => {
 	console.log(`Socket connected: ${socket.id}`);
-	socket.data.userId = dataid;
+	if (dataid < 2)
+		socket.data.userId = dataid;
+	else
+		socket.data.userId = 2;
 	socket.data.matchID = null;
 	// clients.set( socket, dataid);
 	// if (!clients.has(socket)){
@@ -115,6 +119,7 @@ io.on('connection', (socket: MySocket) => {
 	serverHandler(ctx);
 	tournamentHandler(ctx);
 	directMessageHandler(ctx);
+	friendRequestHandler(ctx);
 
 	// socket.on('startmatch', () => {
 	// 	if (clients.size === 2){

@@ -20,6 +20,11 @@ export interface IncomingDirectMessage {
   message: string;
 }
 
+export interface UserData {
+  userID: number;
+  userName: string;
+}
+
 export interface ServerToClientEvents {
   chatMessage: (msg: string) => void;
   notification: (msg: string) => void;
@@ -27,6 +32,8 @@ export interface ServerToClientEvents {
   finished: (msg: any) => void;
   directMessage: (msg: IncomingDirectMessage) => void;
   unreadMessages: (msgs: IncomingDirectMessage[]) => void;
+  newFriendRequest: (sender: UserData) => void;
+  allFriendRequests: (senders: UserData[]) => void;
   // Add other events here
 }
 
@@ -40,6 +47,8 @@ export interface ClientToServerEvents {
   startTournament: (msg: string) => void;
   sendDirectMessage: (msg: DirectMessagePayload, callback: (response: { success: boolean; error?: string }) => void) => void;
   loadUnreadMessages: (callback: (response: { success: boolean, error?: string}) => void) => void;
+  readMessage: (messageID: number) => void;
+  sendFriendRequest: (receiverUserName: string, callback: (response: { success: boolean, error?: string}) => void) => void;
   // Add other events here
 }
 

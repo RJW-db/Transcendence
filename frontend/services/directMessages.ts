@@ -13,6 +13,7 @@ type SendDirectMessageResponse = {
 declare global {
 	interface Window {
 		sendDM: (userName: string, message: string) => void;
+		readDM: (ID: number) => void;
 	}
 }
 
@@ -30,6 +31,10 @@ export function initDirectMessages() {
 			}
 		);
 	};
+
+	window.readDM = (ID: number) => {
+		socket.emit('readMessage', ID);
+	}
 
 	socket.on('directMessage', (msg: IncomingDirectMessage) => {
 		console.log('Received direct message:', msg);

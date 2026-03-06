@@ -40,8 +40,8 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 					},
 					Receiver: {
 						connect: { ID: receiver.ID },
-					},
-				},
+					}
+				}
 			});
 
 			// Check if receiver is online
@@ -55,7 +55,7 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 			callback({ success: true });
 		} catch (error) {
 			console.error("Prisma error sending direct message:", error);
-			return callback({ success: false, error: "Failed to send message" })
+			return callback({ success: false, error: "Failed to send message" });
 		}
 	});
 
@@ -83,5 +83,18 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 			console.error("Failed to load unread messages:", error);
 			return callback({ success: false, error: "Failed to load unread messages" });
 		}
-	})
+	});
+
+	// TODO: maybe check if it's read by correct user as safety check
+	socket.on('readMessage', async (messageID: number) => {
+		try {
+			await db.message.update({
+				where: { ID: messageID },
+				data: { IsRead: true }
+			});
+		}
+		catch (error) {
+			console.error("Failed to set message as read", error);
+		}
+	});
 };
