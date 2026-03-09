@@ -78,11 +78,15 @@ const gameManager = new GameWorkerManager(io, prisma);
 // const tournamentManager = new TournamentManager(gameManager, io);
 
 io.on('connection', (socket: MySocket) => {
-	console.log(`Socket connected: ${socket.id}`);
-	if (dataid < 2)
-		socket.data.userId = dataid;
-	else
-		socket.data.userId = 2;
+	
+
+	// For testing:
+	const socketAmount = 2; // MAX 20 since no more test accounts
+	const clampedId = Math.min(dataid, socketAmount);
+	socket.data.userId = clampedId;
+	socket.data.alias = `user${clampedId}`;
+	console.log(`Socket connected: ${socket.id} as ${socket.data.alias}`);
+	
 	socket.data.matchID = null;
 	// clients.set( socket, dataid);
 	// if (!clients.has(socket)){

@@ -25,6 +25,21 @@ CREATE TABLE Friend (
     REFERENCES User (ID)
 );
 
+-- Table: FriendRequest
+CREATE TABLE FriendRequest (
+    ID integer NOT NULL CONSTRAINT FriendRequest_pk PRIMARY KEY AUTOINCREMENT,
+    SenderID integer NOT NULL,
+    ReceiverID integer NOT NULL,
+    Accepted boolean,
+    SentAt datetime NOT NULL,
+    RespondedAt datetime,
+    CONSTRAINT UniqueFriendRequest UNIQUE (SenderID, ReceiverID),
+    CONSTRAINT FriendRequest_Sender_Match FOREIGN KEY (SenderID)
+    REFERENCES User (ID),
+    CONSTRAINT FriendRequest_Receiver_Match FOREIGN KEY (ReceiverID)
+    REFERENCES User (ID)
+);
+
 -- Table: Invitation
 CREATE TABLE Invitation (
     ID integer NOT NULL CONSTRAINT Invitation_pk PRIMARY KEY AUTOINCREMENT,

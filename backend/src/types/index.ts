@@ -8,21 +8,33 @@ import { TournamentManager } from '../engine/tournamentManager';
 // 1. EVENT DEFINITIONS
 // ========================================================
 
-export interface DirectMessagePayload {
-  receiverUserName: string;
-  receiverID: number;
+export interface UserData {
+  ID: number;
+  alias: string;
+  online: boolean;
+  // TODO: add profile picture
+}
+
+export interface OutgoingDirectMessage {
+  receiverAlias: string;
   message: string;
 }
 
 export interface IncomingDirectMessage {
   messageID: number;
-  senderID: number;
+  sender: UserData;
+  dateTime: Date;
   message: string;
 }
 
-export interface UserData {
-  userID: number;
-  userName: string;
+export interface OutgoingFriendRequest {
+  receiverAlias: string;
+}
+
+export interface IncomingFriendRequest {
+  requestID: number;
+  sender: UserData;
+  sentAt: Date;
 }
 
 export interface ServerToClientEvents {
@@ -32,8 +44,8 @@ export interface ServerToClientEvents {
   finished: (msg: any) => void;
   directMessage: (msg: IncomingDirectMessage) => void;
   unreadMessages: (msgs: IncomingDirectMessage[]) => void;
-  newFriendRequest: (sender: UserData) => void;
-  allFriendRequests: (senders: UserData[]) => void;
+  newFriendRequest: (req: IncomingFriendRequest) => void;
+  allFriendRequests: (reqs: IncomingFriendRequest[]) => void;
   // Add other events here
 }
 
@@ -45,10 +57,10 @@ export interface ClientToServerEvents {
   joinGame: (msg: string) => void;
   joinTournament: (msg: string) => void;
   startTournament: (msg: string) => void;
-  sendDirectMessage: (msg: DirectMessagePayload, callback: (response: { success: boolean; error?: string }) => void) => void;
+  sendDirectMessage: (msg: OutgoingDirectMessage, callback: (response: { success: boolean; error?: string }) => void) => void;
   loadUnreadMessages: (callback: (response: { success: boolean, error?: string}) => void) => void;
   readMessage: (messageID: number) => void;
-  sendFriendRequest: (receiverUserName: string, callback: (response: { success: boolean, error?: string}) => void) => void;
+  sendFriendRequest: (req: OutgoingFriendRequest, callback: (response: { success: boolean, error?: string}) => void) => void;
   // Add other events here
 }
 
@@ -58,6 +70,7 @@ export interface InterServerEvents {
 
 export interface SocketData {
   userId: number;
+  alias: string;
   cookie: string;
   matchID: string | null;
   tournament: TournamentManager;

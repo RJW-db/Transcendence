@@ -1,13 +1,14 @@
-import { Message } from '@prisma/client';
-import { SocketContext, DirectMessagePayload, IncomingDirectMessage } from '../types';
+import { SocketContext, OutgoingDirectMessage, IncomingDirectMessage } from '../types';
 
 // Add logger instead of using console.log
 
 export async function directMessageHandler({ io, socket, db }: SocketContext) {
 
-	socket.on('sendDirectMessage', async (msg: DirectMessagePayload, callback: (response: { success: boolean, error?: string}) => void) => {
+	// TODO: check if reciever hasn't blocked sender
+	socket.on('sendDirectMessage', async (msg: OutgoingDirectMessage, callback: (response: { success: boolean, error?: string}) => void) => {
 		const senderID = socket.data.userId;
 
+		// Check authentication and input
 		if (!senderID)
 			return callback({ success: false, error: "Not authenticated" });
 		if (!msg.message || msg.message.trim().length === 0) {
@@ -18,7 +19,7 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 			// Check if user exists
 			const receiver = await db.user.findUnique({
 				where: {
-					Alias: msg.receiverUserName
+					Alias: msg.receiverAlias
 				},
 				select: {
 					ID: true,
@@ -44,12 +45,16 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 				}
 			});
 
-			// Check if receiver is online
-			// If online, send message to receiver
+			// Send to receiver
 			const outgoingMessage: IncomingDirectMessage = {
 				messageID: savedMessage.ID,
-				senderID: senderID,
+				sender: {
+					ID: senderID,
+					alias: socket.data.alias,
+					online: true
+				},
 				message: savedMessage.Message,
+				dateTime: savedMessage.DateTime
 			};
 			io.to(receiver.ID.toString()).emit('directMessage', outgoingMessage);
 			callback({ success: true });
@@ -63,19 +68,29 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 	socket.on('loadUnreadMessages', async (callback: (response: { success: boolean, error?: string}) => void) => {
 		try {
 			const userID = socket.data.userId;
-			if (!userID) return;
+			if (!userID) return callback({ success: false, error: "Not authenticated" });
 
-			const rows: Message[] = await db.message.findMany({
+			// Retreive unread messages from database
+			const rows = await db.message.findMany({
 				where: {
 					ReceiverID: userID,
 					IsRead: false
+				},
+				include: {
+					Sender: true
 				}
 			});
 
-			const messages: IncomingDirectMessage[] = rows.map((m) => ({
+			// Send to user
+			const messages: IncomingDirectMessage[] = rows.map((m: typeof rows[number]) => ({
 				messageID: m.ID,
-				senderID: m.SenderID,
+				sender: {
+					ID: m.Sender.ID,
+					alias: m.Sender.Alias,
+					online: m.Sender.Online
+				},
 				message: m.Message,
+				dateTime: m.DateTime
 			}));
 			socket.emit('unreadMessages', messages);
 			callback({ success: true });
@@ -89,7 +104,10 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 	socket.on('readMessage', async (messageID: number) => {
 		try {
 			await db.message.update({
-				where: { ID: messageID },
+				where: {
+					ID: messageID,
+					ReceiverID: socket.data.userId
+				},
 				data: { IsRead: true }
 			});
 		}
