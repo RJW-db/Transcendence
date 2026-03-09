@@ -46,6 +46,7 @@ export interface ServerToClientEvents {
   unreadMessages: (msgs: IncomingDirectMessage[]) => void;
   newFriendRequest: (req: IncomingFriendRequest) => void;
   allFriendRequests: (reqs: IncomingFriendRequest[]) => void;
+  newFriend: (user: UserData) => void;
   // Add other events here
 }
 
@@ -61,6 +62,8 @@ export interface ClientToServerEvents {
   loadUnreadMessages: (callback: (response: { success: boolean, error?: string}) => void) => void;
   readMessage: (messageID: number) => void;
   sendFriendRequest: (req: OutgoingFriendRequest, callback: (response: { success: boolean, error?: string}) => void) => void;
+  acceptFriendRequest: (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => void;
+  declineFriendRequest: (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => void;
   // Add other events here
 }
 

@@ -4,6 +4,53 @@ import type { IncomingFriendRequest, OutgoingFriendRequest, UserData } from '../
 
 export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
+	async function acceptFriendRequest(requestID: number, receiverID: number): Promise<{ success: boolean, error?: string }> {
+		const request = await db.friendRequest.findUnique({
+			where: { ID: requestID },
+			include: { Sender: true }
+		});
+
+		if (!request)
+			return { success: false, error: "No request found" };
+		if (request.ReceiverID !== receiverID)
+			return { success: false, error: "Unauthorized" };
+
+		// Check if already friends and remove request if so
+		const existing = await db.friend.findFirst({
+			where: {
+				OR: [
+					{ User1ID: receiverID, User2ID: request.SenderID },
+					{ User1ID: request.SenderID, User2ID: receiverID }
+				]
+			}
+		});
+		if (existing) {
+			db.friendRequest.delete({ where: { ID: requestID } }).catch((err: unknown) =>
+				console.error("Failed to clean up stale friend request:", err)
+			);
+			return { success: false, error: "Already friends" };
+		}
+
+		// Create friendship
+		await db.friend.create({
+			data: {
+				User1ID: receiverID,
+				User2ID: request.SenderID,
+				DateBefriended: new Date()
+			}
+		});
+
+		// Delete request
+		db.friendRequest.delete({ where: { ID: requestID } }).catch((err: unknown) =>
+			console.error("Failed to clean up stale friend request:", err)
+		);
+		io.to(request.SenderID.toString()).emit('newFriend', { ID: receiverID, alias: socket.data.alias, online: true });
+		io.to(receiverID.toString()).emit('newFriend', { ID: request.SenderID, alias: request.Sender.Alias, online: request.Sender.Online });
+		return { success: true };
+	}
+
+
+	// TODO: Check if receiver has blocked sender
 	socket.on('sendFriendRequest', async (req: OutgoingFriendRequest, callback: (response: { success: boolean, error?: string}) => void) => {
 		const senderID = socket.data.userId;
 		const senderAlias = socket.data.alias;
@@ -23,7 +70,18 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 			if (!receiver)
 				return callback({ success: false, error: "User does not exist" });
 
-			// TODO: check if users are already friends
+			// Check if user are already friends
+			const existing = await db.friend.findFirst({
+				where: {
+					OR: [
+						{ User1ID: receiver.ID, User2ID: senderID },
+						{ User1ID: senderID, User2ID: receiver.ID }
+					]
+				}
+			});
+			if (existing)
+				return callback({ success: false, error: "Already friends"});
+
 			// Check if friend request exists
 			const existingRequest = await db.friendRequest.findFirst({
 				where: {
@@ -37,7 +95,10 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 				if (existingRequest.SenderID === senderID) {
 					return callback({ success: false, error: "Friend request already sent" });
 				}
-				// TODO: accept friend request since both requested each other
+				// Accept friend request since both requested each other
+				const result = await acceptFriendRequest(existingRequest.ID, senderID);
+				if (!result.success)
+					return callback(result);
 				return callback({ success: true });
 			}
 
@@ -69,6 +130,49 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 		} catch (error) {
 			console.error("Prisma error sending friend request:", error);
 			return callback({ success: false, error: "Failed to send friend request" });
+		}
+	});
+
+
+	socket.on('acceptFriendRequest', async (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => {
+		const receiverID = socket.data.userId;
+		const receiverAlias = socket.data.alias;
+
+		if (!receiverID || !receiverAlias)
+			return callback({ success: false, error: "Not authenticated" });
+
+		try {
+			const result = await acceptFriendRequest(requestID, receiverID);
+			callback(result);
+		} catch (error) {
+			console.error("Prisma error accepting friend request:", error);
+			return callback({ success: false, error: "Failed to accept friend request" });
+		}
+	});
+
+
+	socket.on('declineFriendRequest', async (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => {
+		const receiverID = socket.data.userId;
+		const receiverAlias = socket.data.alias;
+
+		if (!receiverID || !receiverAlias)
+			return callback({ success: false, error: "Not authenticated" });
+
+		try {
+			const request = await db.friendRequest.findUnique({
+				where: { ID: requestID }
+			});
+			if (!request)
+				return callback({ success: false, error: "No request found" });
+			if (request.ReceiverID !== receiverID)
+				return callback({ success: false, error: "Unauthorized" });
+
+			await db.friendRequest.delete({ where: { ID: requestID }});
+			callback({ success: true });
+
+		} catch (error) {
+			console.error("Prisma error declining friend request:", error);
+			return callback({ success: false, error: "Failed to decline friend request" });
 		}
 	});
 }

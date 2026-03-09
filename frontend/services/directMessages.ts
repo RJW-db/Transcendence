@@ -19,12 +19,7 @@ interface IncomingFriendRequest {
 	sentAt: Date;
 }
 
-type SendDirectMessageResponse = {
-	success: boolean;
-	error?: string;
-};
-
-type SendFriendRequestResponse = {
+type ActionResponse = {
 	success: boolean;
 	error?: string;
 };
@@ -34,6 +29,8 @@ declare global {
 		sendDM: (alias: string, message: string) => void;
 		readDM: (ID: number) => void;
 		sendFriendRequest: (alias: string) => void;
+		acceptFriendRequest: (requestID: number) => void;
+		declineFriendRequest: (requestID: number) => void;
 	}
 }
 
@@ -42,7 +39,7 @@ export function initDirectMessages() {
 		socket.emit(
 			'sendDirectMessage',
 			{ receiverAlias: alias, message: message },
-			(response: SendDirectMessageResponse) => {
+			(response: ActionResponse) => {
 				if (!response.success) {
 					console.error('Error:', response.error);
 				} else {
@@ -60,11 +57,39 @@ export function initDirectMessages() {
 		socket.emit(
 			'sendFriendRequest',
 			{ receiverAlias: alias },
-			(response: SendFriendRequestResponse) => {
+			(response: ActionResponse) => {
 				if (!response.success) {
 					console.error('Error:', response.error);
 				} else {
 					console.log('Friend request sent to', alias);
+				}
+			}
+		);
+	};
+
+	window.acceptFriendRequest = (requestID: number) => {
+		socket.emit(
+			'acceptFriendRequest',
+			requestID,
+			(response: ActionResponse) => {
+				if (!response.success) {
+					console.error('Error:', response.error);
+				} else {
+					console.log('Friend request accepted:', requestID);
+				}
+			}
+		);
+	};
+
+	window.declineFriendRequest = (requestID: number) => {
+		socket.emit(
+			'declineFriendRequest',
+			requestID,
+			(response: ActionResponse) => {
+				if (!response.success) {
+					console.error('Error:', response.error);
+				} else {
+					console.log('Friend request declined:', requestID);
 				}
 			}
 		);
@@ -86,5 +111,9 @@ export function initDirectMessages() {
 
 	socket.on('allFriendRequests', (reqs: IncomingFriendRequest[]) => {
 		console.log('All friend requests:', reqs);
+	});
+
+	socket.on('newFriend', (friend: UserData) => {
+		console.log('You are now friends with:', friend);
 	});
 }

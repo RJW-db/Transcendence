@@ -89,6 +89,6 @@ nodeV:
 # cd fastify-ws-docker
 # npm run dev
 
-re: down all
+re: down db-rm all
 
 .PHONY: all build up down setup-ngrok ngrok ngrok-url kill-ngrok log db-rm clean fclean allclean nodeV re
