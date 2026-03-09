@@ -3,6 +3,7 @@ export class PongGame {
   public roomId: string;
   public p1Id: number; // Store the ID of Player 1
   public p2Id: number; // Store the ID of Player 2
+  public winner: number = 0; //maybe default to one player so db can never fail
   public end = false;
 
   public state = {
@@ -202,8 +203,12 @@ export class PongGame {
   }
   
   update() {
-    if (this.isReset === true)
+    if (this.isReset === true || this.end === true){
+
       return;
+    }
+
+      
 
     // Paddlechange false needs to be done before end of function, not at start
     this.paddleChange = false;
@@ -251,8 +256,10 @@ export class PongGame {
         this.state.score.p1 += 1;
         this.reset(-1);
       }
-      if (this.state.score.p1 === -1 || this.state.score.p2 === -1)
+      if (this.state.score.p1 === 2 || this.state.score.p2 === 2) {
+        this.winner = this.state.score.p1 === 2 ? this.p1Id: this.p2Id;
         this.end = true;
+      }
       return ;
     }
 

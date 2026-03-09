@@ -56,8 +56,8 @@ CREATE TABLE "Match" (
     ID integer NOT NULL CONSTRAINT Match_pk PRIMARY KEY AUTOINCREMENT,
     Player1ID integer NOT NULL,
     Player2ID integer NOT NULL,
-    Player1Score integer NOT NULL,
-    Player2Score integer NOT NULL,
+    Player1Score integer,
+    Player2Score integer,
     CreationDate datetime NOT NULL,
     WinnerID integer,
     CONSTRAINT User1_Match FOREIGN KEY (Player1ID)

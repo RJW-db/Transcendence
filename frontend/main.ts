@@ -8,6 +8,13 @@ import { Navbar } from './pages/navbar'
 // import { TournamentsPage } from './pages/tournament';
 import { initRouter } from './router';
 
+export class CustomError extends Error{
+	constructor(public message: string, public code: string) {
+		super(message);
+	}
+}
+
+
 function booststrap() {
 	const appRoot = document.querySelector<HTMLDivElement>('#app');
 	

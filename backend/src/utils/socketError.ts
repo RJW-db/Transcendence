@@ -1,5 +1,11 @@
 import { MySocket } from '../types';
 
+export class CustomError extends Error{
+	constructor(message: string, public code: string) {
+		super(message);
+	}
+}
+
 export function socketError(socket: MySocket) {
   // 1. Capture the original 'on' method with its complex types
   const originalOn = socket.on;
@@ -21,8 +27,15 @@ export function socketError(socket: MySocket) {
         // Run the actual handler
         // If it's async, it will be awaited. If sync, await still works.
         await handler(...params, callback);
-      } catch (err: any) {
-        console.error(`🔴 [Error in ${event}]:`, err.stack);
+        const errorResponse = {
+          success: true
+        };
+        if (callback) {
+          callback(errorResponse);
+        }
+      } 
+      catch (err: any) {
+        console.error(`🔴 [Error in ${event}]:\n${err.message}\n`, err.stack);
 
         const errorResponse = {
           success: false,

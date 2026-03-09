@@ -28,11 +28,11 @@ export function pong() {
     <!-- Scoreboard -->
     <div class="flex justify-between w-full max-w-[800px] mb-6 px-10 py-4 bg-slate-900/50 rounded-2xl border border-slate-800 backdrop-blur-sm">
       <div class="text-center">
-        <p class="text-xs text-slate-500 font-bold tracking-widest uppercase">Player 1</p>
+        <p id="p1-alias" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Player 1</p>
         <p id="p1-score" class="text-5xl font-black text-cyan-400">0</p>
       </div>
       <div class="text-center">
-        <p class="text-xs text-slate-500 font-bold tracking-widest uppercase">Player 2</p>
+        <p id="p2-alias" class="text-xs text-slate-500 font-bold tracking-widest uppercase">Player 2</p>
         <p id="p2-score" class="text-5xl font-black text-rose-500">0</p>
       </div>
     </div>
@@ -40,6 +40,15 @@ export function pong() {
     <!-- Game Arena -->
     <div class="relative group">
       <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-lg blur opacity-20"></div>
+      
+      <!-- Status Overlay -->
+      <div id="game-overlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/80 rounded-lg backdrop-blur-sm transition-opacity duration-300">
+        <div id="overlay-content" class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4 mx-auto"></div>
+            <p class="text-white text-xl font-bold tracking-widest uppercase">Waiting for Opponent...</p>
+        </div>
+      </div>
+      
       <canvas id="pongCanvas" width="800" height="600" class="relative bg-black rounded-lg border border-slate-700 shadow-2xl"></canvas>
     </div>
   `;
@@ -49,6 +58,10 @@ export function pong() {
   const ctx = canvas.getContext('2d')!;
   const p1ScoreEl = container.querySelector('#p1-score')!;
   const p2ScoreEl = container.querySelector('#p2-score')!;
+  const p1AliasEl = container.querySelector('#p1-alias')!;
+  const p2AliasEl = container.querySelector('#p2-alias')!;
+  const overlay = container.querySelector('#game-overlay') as HTMLElement;
+  const overlayContent = container.querySelector('#overlay-content') as HTMLElement;
 
   // Game Constants (Match these with your backend paddle size)
   const PADDLE_WIDTH = 10;
@@ -60,6 +73,57 @@ export function pong() {
     p2X: 740, p2Y: 250,
     score: { p1: 0, p2: 0 }
   };
+
+  const showWaiting = () => {
+    overlay.classList.remove('hidden', 'opacity-0');
+    overlayContent.innerHTML = `
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4 mx-auto"></div>
+        <p class="text-white text-xl font-bold tracking-widest uppercase animate-pulse">Waiting for Opponent...</p>
+    `;
+  };
+
+  const hideOverlay = () => {
+    overlay.classList.add('opacity-0');
+    setTimeout(() => overlay.classList.add('hidden'), 300);
+  };
+
+  const showWinner = (winnerName: string) => {
+    overlay.classList.remove('hidden', 'opacity-0');
+    const color = winnerName === 'Player 1' ? 'text-cyan-400' : 'text-rose-500';
+    overlayContent.innerHTML = `
+        <h2 class="text-4xl font-black ${color} mb-2 uppercase italic tracking-tighter">Victory!</h2>
+        <p class="text-white text-lg mb-6">${winnerName} has won the match</p>
+        <button id="rematch-btn" class="px-6 py-2 bg-white text-black font-bold rounded-full hover:bg-cyan-400 transition-colors">
+            PLAY AGAIN
+        </button>
+    `;
+
+    container.querySelector('#rematch-btn')?.addEventListener('click', () => {
+        socket.emit('joinGame');
+        showWaiting();
+    });
+  };
+
+  // --- Socket.io Listeners ---
+
+  // 1. When the game starts (Both players joined)
+  socket.on('gameStarted', (p1: string, p2: string) => {
+    p1AliasEl.textContent = p1;
+    p2AliasEl.textContent = p2;
+    hideOverlay();
+  });
+
+  // 2. When the game ends
+  socket.on('finished', (data: any) => {
+    onGameStateUpdate(data.state)
+    const winnerLabel = `Player ${data.winner}`;
+    showWinner(winnerLabel);
+  });
+
+  // // 3. Optional: If a player leaves mid-game
+  // socket.on('playerDisconnected', () => {
+  //   showWaiting();
+  // });
 
   // RENDERING FUNCTION
   const render = (state: GameState) => {
@@ -113,63 +177,46 @@ export function pong() {
     requestAnimationFrame(loop);
   }
 
-function startInputLoop() {
-  setInterval(() => {
-    // If there are directions being held, emit them
-    activeKeys.forEach((direction) => {
-      socket.emit('gameKey', direction);
-      // console.log(`Emitting continuous input: ${direction}`);
-    });
-  }, interval); // Adjust this number (ms) for repeat speed
-}
-
-  // SOCKET LISTENERS
-  const onGameStateUpdate = (state: GameState) => {
-    serverState = state;
-    // We use requestAnimationFrame to ensure the draw happens 
-    // synced with the monitor's refresh rate
-    // requestAnimationFrame(() => render(state));
-  };
-
-function handleKeyDown(event: KeyboardEvent) {
-  const direction = KEY_MAP[event.key];
-  if (direction) {
-    activeKeys.add(direction);
+  function startInputLoop() {
+    setInterval(() => {
+      // If there are directions being held, emit them
+      activeKeys.forEach((direction) => {
+        socket.emit('gameKey', direction);
+        // console.log(`Emitting continuous input: ${direction}`);
+      });
+    }, interval); // Adjust this number (ms) for repeat speed
   }
-}
 
-function handleKeyUp(event: KeyboardEvent) {
-  const direction = KEY_MAP[event.key];
-  if (direction) {
-    activeKeys.delete(direction);
+    // SOCKET LISTENERS
+    const onGameStateUpdate = (state: GameState) => {
+      serverState = state;
+      // We use requestAnimationFrame to ensure the draw happens 
+      // synced with the monitor's refresh rate
+      // requestAnimationFrame(() => render(state));
+    };
+
+  function handleKeyDown(event: KeyboardEvent) {
+    const direction = KEY_MAP[event.key];
+    if (direction) {
+      activeKeys.add(direction);
+    }
   }
-}
 
-window.addEventListener('keydown', handleKeyDown);
-window.addEventListener('keyup', handleKeyUp);
-startInputLoop();
-  // // INPUT LISTENERS
-  // const onKeyDown = (event: KeyboardEvent) => {
-  //   let direction = null;
-  //   if (event.key === 'w' || event.key === 'o' || event.key === 'ArrowUp') direction = 'up';
-  //   else if (event.key === 's' || event.key === 'l' || event.key === 'ArrowDown') direction = 'down';
+  function handleKeyUp(event: KeyboardEvent) {
+    const direction = KEY_MAP[event.key];
+    if (direction) {
+      activeKeys.delete(direction);
+    }
+  }
 
-  //   if (direction) {
-  //     socket.emit('gameKey', direction);
-  //   }
-  // };
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+  startInputLoop();
+
 
   socket.on('gameState', onGameStateUpdate);
-  // window.addEventListener('keydown', onKeyDown);
 
   requestAnimationFrame(loop)
-  // let animationFrameId: number;
-  // const loop = () => {
-  //   if (serverState)
-  //     render(serverState);
-  //   animationFrameId = requestAnimationFrame(loop);
-  //   console.log(`frameId is ${animationFrameId}`);
-  // }
 
 
   // RETURN FOR ROUTER

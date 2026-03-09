@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 export const socket: Socket = io({
   path: '/ws',
   autoConnect: true, // Connect automatically
+  withCredentials: true,
 });
 
 socket.on('connect', () => {

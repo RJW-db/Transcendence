@@ -23,7 +23,7 @@ const intervalId = setInterval(() => {
     if (game.end === false)
       updates.push({ roomId: game.roomId, state: game.state });
     else {
-      finished.push({matchId: game.matchId, roomId: game.roomId, state: game.state });
+      finished.push({matchId: game.matchId, roomId: game.roomId, winner: game.winner, state: game.state });
       games.delete(game.roomId);
     }
 
@@ -47,13 +47,18 @@ if (parentPort) {
         const gamestart = games.get(msg.roomId);
         if (gamestart) gamestart.init();
         break;
-        
+      
+      //If a socket disconnects we pass it's db ID so we can default the
+      //other player to win
       case 'DELETE_GAME':
-        games.delete(msg.roomId);
+        const gameEnd = games.get(msg.roomId);
+        if (gameEnd) {
+          gameEnd.end = true;
+          gameEnd.winner = gameEnd.p1Id === msg.disc_user ? gameEnd.p2Id: gameEnd.p1Id;
+        }
         break;
 
       case 'INPUT':
-        // msg: { roomId, player, action }
         const game = games.get(msg.roomId);
         if (game) game.handleInput(msg.player, msg.action);
         break;

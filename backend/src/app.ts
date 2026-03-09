@@ -6,6 +6,7 @@ const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 export const cookie = require('@fastify/cookie');
 import type { FastifyCookieOptions } from '@fastify/cookie'
+import { parse } from "cookie";
 
 
 import { apimessageHandlers, ApiMessageHandler } from './handlers/loginHandler';
@@ -17,10 +18,11 @@ import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
 import { socketError } from './utils/socketError';
+import { decodeJWT, JWT_SECRET } from './authentication/jsonWebToken';
 
 
 const fastify = Fastify({
-//   logger: true // Enable logger for better development experience
+  logger: false // Enable logger for better development experience
 });
 
 // export fastiftCookieOptions
@@ -84,11 +86,39 @@ register();
 const gameManager = new GameWorkerManager(io, prisma);
 // const tournamentManager = new TournamentManager(gameManager, io);
 
+// io.use((socket: MySocket, next) => {
+// 	const cookie = socket.request.headers.cookie;
+// 	// console.log(`This is the cookie: ${cookie}`)
+	
+// 	if (!cookie) {
+// 		return next(new Error("No cookie found"))
+// 	}
+
+// 	const preparse = parse(cookie);
+// 	const jwt : string | undefined = preparse.auth;
+// 	if (!jwt) {
+// 		return next(new Error("No cookie found"))
+// 	}
+		
+// 	const data = decodeJWT(jwt, JWT_SECRET);
+
+// 	if (!data) {
+// 		return next(new Error("Incorrect cookie"))
+// 	}
+
+// 	//Check db for user
+
+// 	socket.data.userId = data.sub
+// 	next()
+	
+// })
+
 io.on('connection', (socket: MySocket) => {
 	socketError(socket);
 	socket.emit(`homePage`, "Load homepage on connect");
-	console.log(`Socket connected: ${socket.id}`);
-	socket.data.userId = dataid;
+	if (!socket.data.userId)
+		socket.data.userId = dataid;
+	console.log(`Socket connected: ${socket.data.userId}`);
 	socket.data.matchID = null;
 	// clients.set( socket, dataid);
 	// if (!clients.has(socket)){
@@ -245,6 +275,7 @@ async function gracefulShutdown(signal: string) {
   
   isShuttingDown = true;
   fastify.log.info(`${signal} received, starting graceful shutdown...`);
+//   console.log(`Shutting down, signal: ${signal}`)
 
   try {
 	  

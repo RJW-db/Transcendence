@@ -31,6 +31,7 @@ export interface ServerToClientEvents {
   unreadMessages: (msgs: IncomingDirectMessage[]) => void;
   internalError: (msg: string) => void;
   homePage: (msg: string) => void;
+  gameStarted: (p1: string, p2: string) => void;
   // Add other events here
 }
 

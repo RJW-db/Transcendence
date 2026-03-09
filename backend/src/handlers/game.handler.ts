@@ -1,6 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client'; // Example DB
 import { Logger } from 'pino'; // Example Logger
+import { CustomError} from '../utils/socketError';
 
 import { SocketContext } from '../types';
 
@@ -17,14 +18,20 @@ export const gameHandler = ({ io, socket, gameManager, db }: SocketContext) => {
 			gameManager.handleInput(socket.data.matchID, socket.data.userId, msg);
 	})
 
+	//If a user goes to a different page, ask in router for confirmation
+	//and then emit something like a 'leavegame'
 	socket.on('joinGame', async (msg: string) => {
-		// throw new Error("tester");
+		// throw new CustomError("Something went wrong", "5");
 		//Add users to waiting room
+		if (socket.data.matchID) {
+			console.log(`Socket has matchID: ${socket.data.matchID}`)
+			return; 
+		}
 		socket.join('waitRoom');
 		console.log("user joined")
 		//Check if at least 2 people waiting
 		const sockets = await io.in('waitRoom').fetchSockets();
-		if (sockets.length === 2)
+		if (sockets.length >= 2)
 		{
 			// Create Match entry in db
 			const match = await db.match.create({
@@ -46,6 +53,7 @@ export const gameHandler = ({ io, socket, gameManager, db }: SocketContext) => {
 
 			//Start match
 			gameManager.createGame(match.ID, matchID, sockets[0].data.userId, sockets[1].data.userId);
+			io.in(matchID).emit('gameStarted', sockets[0].data.userId.toString(), sockets[1].data.userId.toString())
 		}
 
 	})
