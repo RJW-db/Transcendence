@@ -1,0 +1,16 @@
+create tmpHomePage
+check if info correct otherwise alert
+
+
+at start getCurrentLoginInfo
+go to profile page if logged in
+if not logged in go to home page
+
+how to manage single page application routing?
+
+implement proper storing of login state in browser
+
+connection errors catch on socketio error messages
+logic errors in backend catch on socket error wrapper and listen for
+callbacks in frontend
+frontend errors wrap around router, if fatal error emit to backend

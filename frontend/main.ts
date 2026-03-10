@@ -1,5 +1,5 @@
 // import io  from 'socket.io-client';
-import './services/socket';
+import { socket } from './services/socket';
 import './styles.css';
 import { initDirectMessages } from './services/directMessages';
 
@@ -7,6 +7,13 @@ import { Navbar } from './pages/navbar'
 // import { PongPage } from './pages/pong';
 // import { TournamentsPage } from './pages/tournament';
 import { initRouter } from './router';
+
+export class CustomError extends Error{
+	constructor(public message: string, public code: string) {
+		super(message);
+	}
+}
+
 
 function booststrap() {
 	const appRoot = document.querySelector<HTMLDivElement>('#app');
@@ -25,6 +32,13 @@ function booststrap() {
 	
 	initRouter();
 	initDirectMessages();
+
+	socket.on('internalError', (msg: string) => {
+		console.log(`${msg}`);
+		pageContent.innerHTML = 'Internal Server Error';
+		appRoot.appendChild(pageContent);
+	})
+
 }
 
 booststrap();

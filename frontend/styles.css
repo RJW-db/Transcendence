@@ -13,7 +13,7 @@ body {
 }
 
 /* Optional: Add a subtle grid overlay for a "retro-future" look */
-#app::before {
+/* #app::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -22,4 +22,4 @@ body {
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
-}
+} */
