@@ -100,7 +100,7 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 		}
 	});
 
-	// TODO: maybe check if it's read by correct user as safety check
+	// TODO: Check for error and if its wrong receiver catch and throw more obvious error
 	socket.on('readMessage', async (messageID: number) => {
 		try {
 			await db.message.update({
