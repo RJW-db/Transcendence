@@ -25,7 +25,6 @@ export const getLoginInfo: ApiMessageHandler = async (
       Email: user.Email,
       Online: user.Online.toString(),
       CreationDate: user.CreationDate,
-      ProfilePicture: user.ProfilePicture,
       AccountType: accountType,
       GamesWon: user.GamesWon,
     },
@@ -64,13 +63,14 @@ export async function getCurrentUserId(request: FastifyRequest, reply : FastifyR
   return userId;
 }
 export const getProfilePicture: ApiMessageHandler = async (
-  payload: { userID: number },
+  payload: {},
   request,
   prisma,
   fastify,
   reply
 ) => {
-    const user = await prisma.user.findUnique({ where: { ID: payload.userID } });
+  const userId = await getCurrentUserId(request, reply);
+  const user = await prisma.user.findUnique({ where: { ID: userId } });
   if (!user) {
     reply.status(400).send({ message: 'User not found' });
     return;

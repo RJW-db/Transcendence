@@ -51,12 +51,13 @@ export async function totpSetup(container: HTMLDivElement, email: string, secret
     container.querySelector('#verify-btn')?.addEventListener('click', async(event) => {
       event.preventDefault();
       const tokenInput = container.querySelector('#token-input') as HTMLInputElement;
-
+      const aliasInput = container.querySelector('#aliasInput') as HTMLInputElement;
+      const alias = aliasInput.value.trim();
       const token = tokenInput.value.trim();
       console.log("verify button clicked")
       console.log('Token entered:', token);
       console.log('Current secret:', currentSecret);
-        await registerUser(container,currentSecret, token);
+        await registerUser(container,currentSecret, token, alias);
       return ;
     }
     );
@@ -67,32 +68,3 @@ export async function totpSetup(container: HTMLDivElement, email: string, secret
   }
 }
 
-
-// export async function totpVerify() : Promise<boolean> {
-//   const tokenInput = document.getElementById('token-input') as HTMLInputElement;
-//   const token = tokenInput.value.trim();
-//   const messageDiv = document.getElementById('verify-message');
-  
-//   if (!token || token.length !== 6) {
-//     if (messageDiv) {
-//       messageDiv.innerHTML = '<div class="message error">Please enter a 6-digit code</div>';
-//       return false;
-//     }
-//   }
-
-//   const isValid = await verifyToken(token, currentSecret);
-//   console.log('Verification result:', isValid);
-
-//   if (messageDiv) {
-//     if (isValid) {
-//       messageDiv.innerHTML = '<div class="message success">✓ Token is valid!</div>';
-//       // document.getElementById('registeredMessage')?.classList.remove('hidden');
-//     } else {
-//       messageDiv.innerHTML = '<div class="message error">✗ Invalid token</div>';
-//     }
-//   }
-//   if (isValid)
-//     return true;
-//   else
-//     return false;
-// }

@@ -2,8 +2,8 @@ import { totpSetup, validateEmail } from "../src/authentication/TOTP-app";
 import { fetchWithJWTRefresh } from './fetchWithJWTRefresh';
 
 
-export async function registerUser(container: HTMLDivElement, secret: string, token: string ) {
-    const totpResponse = await sendRegisterTotpRequest(token);
+export async function registerUser(container: HTMLDivElement, secret: string, token: string, alias : string ) {
+    const totpResponse = await sendRegisterTotpRequest(token, alias);
     const totpResult = await totpResponse.json();
     if (!totpResponse.ok) {
       const errorBox = container.querySelector('#registerError');
@@ -19,7 +19,7 @@ export async function registerUser(container: HTMLDivElement, secret: string, to
     window.location.href = '/';
 }
 
-async function sendRegisterRequest(Alias: string, Email: string, Password: string): Promise<Response> {
+async function sendRegisterRequest(Email: string, Password: string): Promise<Response> {
   const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
@@ -28,7 +28,6 @@ async function sendRegisterRequest(Alias: string, Email: string, Password: strin
     body: JSON.stringify({
       type: 'registerUser',
       Payload: {
-        Alias: Alias,
         Email: Email,
         Password: Password,
       }
@@ -37,7 +36,7 @@ async function sendRegisterRequest(Alias: string, Email: string, Password: strin
   return response;
 }
 
-async function sendRegisterTotpRequest(token: string): Promise<Response> {
+async function sendRegisterTotpRequest(token: string, alias: string): Promise<Response> {
   const response = await fetchWithJWTRefresh('/api', {
     method: 'POST',
     headers: {
@@ -47,6 +46,7 @@ async function sendRegisterTotpRequest(token: string): Promise<Response> {
       type: 'registerTotp',
       Payload: {
         VerifyToken: token,
+        Alias: alias
       }
     }),
   });
@@ -57,11 +57,11 @@ export async function registerNewUser(container : HTMLDivElement) : Promise<void
       const errorBox = container.querySelector('#registerError') as HTMLElement | null;
       const form = container.querySelector('form') as HTMLFormElement | null;
     const formData = new FormData(form);
-    const alias = String(formData.get('alias') ?? '').trim();
+    // const alias = String(formData.get('alias') ?? '').trim();
     const email = String(formData.get('email') ?? '').trim();
     const password = String(formData.get('password') ?? '').trim();
 
-    if (!alias || !email || !password) {
+    if (!email || !password) {
       errorBox!.textContent = 'Error: Please fill in all fields.';
       return;
     }
@@ -72,7 +72,7 @@ export async function registerNewUser(container : HTMLDivElement) : Promise<void
 
     // These are used by sendRegisterRequest()
 
-    const response = await sendRegisterRequest(alias, email, password);
+    const response = await sendRegisterRequest(email, password);
 
     const checkResult = await response.json();
     if (!response.ok) {
@@ -84,5 +84,5 @@ export async function registerNewUser(container : HTMLDivElement) : Promise<void
     {
       console.log("Account registration successful, proceeding to TOTP setup");
     }
-    await totpSetup(container, alias, checkResult.secret);
+    await totpSetup(container, email, checkResult.secret);
 }

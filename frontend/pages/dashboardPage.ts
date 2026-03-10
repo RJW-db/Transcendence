@@ -1,37 +1,27 @@
-import { File } from "buffer";
 import { fetchWithJWTRefresh } from "../login/fetchWithJWTRefresh";
 
 export async function dashboardPage() {
     const container = document.createElement('div');
-
+    
     container.className = '';
     console.log("Loading dashboard page");
     const htmlResponse = await fetch('../html/dashboard.html');
+    // const htmlResponse = await fetch('../html/editProfile.html');
+    
     container.innerHTML = await htmlResponse.text();
+    
     loadDashboard(container);
 
     const dashboardInfo = container.querySelector('#profileCard');
     const editProfileForm = container.querySelector('#editForm');
-    if (dashboardInfo && editProfileForm) {
-        dashboardInfo.classList.remove('hidden');
-        editProfileForm.classList.add('hidden');
-    }
     const editProfileBtn = container.querySelector('#editProfileBtn');
-    editProfileBtn?.addEventListener('click', (e) => {
+    editProfileBtn?.addEventListener('click', (e => {
         e.preventDefault();
-        console.log('Edit profile clicked');
-        // reveal edit profile form and hide dashboard info
-
-        if (dashboardInfo && editProfileForm) {
-            dashboardInfo.classList.add('hidden');
-            editProfileForm.classList.remove('hidden');
-            editUserProfile(container);
-        }
-        else {
-            if (!dashboardInfo) console.error('Failed to find dashboard info element');
-            if (!editProfileForm) console.error('Failed to find edit profile form element');
-        }
-    });
+        history.pushState(null, '', '/editProfile');
+        const popStateEvent = new PopStateEvent('popstate');
+        window.dispatchEvent(popStateEvent);
+        return false;
+    }));
 
     return container;
 }
@@ -115,103 +105,4 @@ async function loadDashboard(container: HTMLDivElement) {
     img.className = 'w-32 h-32 rounded-full object-cover';
     profilePictureElement.appendChild(img);
     console.log('Profile picture displayed on dashboard');
-}
-
-async function editUserProfile(container: HTMLDivElement) {
-    const form = container.querySelector('#profileForm') as HTMLFormElement;
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const alias = formData.get('alias') as string;
-        const email = formData.get('email') as string;
-        const password = formData.get('password') as string;
-        const fileUploadInput = container.querySelector('#profilePictureUpload') as HTMLInputElement | null;
-        if (!fileUploadInput) {
-            console.error('Failed to find profile picture input element');
-        }
-        else
-        {
-            console.log('Profile picture input element found:', fileUploadInput);
-            console.log('Selected file:', fileUploadInput.files ? fileUploadInput.files[0] : 'No file selected');
-        }
-        let profilePictureData: Blob | null = null;
-
-        if (fileUploadInput && fileUploadInput.files && fileUploadInput.files.length === 1) {
-            const image = fileUploadInput.files[0];
-            const formData = new FormData();
-            formData.append('type', 'updateUserProfilePicture');
-            formData.append('profilePicture', image, image.name);
-            const profilePictureResponse = await fetchWithJWTRefresh('/api', {
-                method: 'POST',
-                body: formData,
-            });
-            const result = await profilePictureResponse.json();
-            if (profilePictureResponse.ok) {
-                console.log('Profile picture updated successfully');
-            }
-            else {
-                console.error('Failed to update profile picture:', result.message);
-            }
-            if (!profilePictureResponse.ok) {
-                const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
-                errorBox.textContent = 'Failed to update profile picture.';
-                errorBox.classList.remove('hidden');
-            }
-            if (!alias && !email && !password) {
-                console.log('Profile updated successfully');
-                loadDashboard(container);
-                return;
-            }
-        }
-        else if (!alias && !email && !password) {
-            const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
-            errorBox.textContent = 'Please provide at least one field to update.';
-            console.log('No fields to update');
-            errorBox.classList.remove('hidden');
-            return false;
-        }
-        if (alias || email || password) {
-            const response = await submitProfileUpdate(alias, email, password);
-            if (response.ok) {
-                console.log('Profile updated successfully');
-                loadDashboard(container);
-            } else {
-                const errorBox = container.querySelector('#errorBox') as HTMLDivElement;
-                errorBox.textContent = 'Failed to update profile.';
-                errorBox.classList.remove('hidden');
-            }
-        }
-    });
-
-    const cancelBtn = container.querySelector('#cancelEditBtn') as HTMLButtonElement;
-    cancelBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const dashboardInfo = container.querySelector('#profileCard');
-        const editProfileForm = container.querySelector('#editForm');
-        if (dashboardInfo && editProfileForm) {
-            dashboardInfo.classList.remove('hidden');
-            editProfileForm.classList.add('hidden');
-            console.log('Edit profile cancelled');
-        }
-    });
-
-}
-
-async function submitProfileUpdate(alias: string, email: string, password: string) {
-
-    const response = await fetchWithJWTRefresh('/api', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            type: 'updateUserProfile',
-            Payload: {
-                Alias: alias,
-                Email: email,
-                Password: password,
-            }
-        }),
-    });
-    return response;
 }

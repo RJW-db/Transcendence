@@ -186,6 +186,7 @@ console.log('Socket.IO initialized');
 // 	// console.log("binary data:", data.file);
 // }
 
+
 //fastify.register(async function (fastify: FastifyInstance) {
 fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
 	try{

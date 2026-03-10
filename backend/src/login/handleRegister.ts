@@ -5,12 +5,12 @@ import { generateCookie } from './accountUtils'
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
 import { PrismaClient } from '@prisma/client';
 
-async function  checkAccountExists(alias: string, email: string, prisma : PrismaClient): Promise<boolean> {
+async function  checkAccountExists(alias: string | null, email: string | null, prisma : PrismaClient): Promise<boolean> {
   const user = await prisma.user.findFirst({
     where: {
       OR: [
-        { Alias: alias },
-        { Email: email }
+        { Alias: alias ? alias : undefined },
+        { Email: email ? email : undefined}
       ]
     }
   });
@@ -21,19 +21,19 @@ async function  checkAccountExists(alias: string, email: string, prisma : Prisma
 }
 
 export const handleRegister: ApiMessageHandler = async (
-  payload: { Alias: string; Email: string; Password: string; oauthLogin?: boolean },
+  payload: {Email: string; Password: string; oauthLogin?: boolean },
   request,
   prisma,
   fastify,
   reply
 ) => {
-  if (await checkAccountExists(payload.Alias, payload.Email, prisma)) {
-    fastify.log.error(`User already exists: ${payload.Alias}, ${payload.Email}`);
+  if (await checkAccountExists(null , payload.Email, prisma)) {
+    fastify.log.error(`User already exists:, ${payload.Email}`);
     reply.status(400).send({ message: 'User already exists' });
     return;
   }
 
-  if (!payload.Alias || !payload.Email || !payload.Password) {
+  if (!payload.Email || !payload.Password) {
     fastify.log.error(`Incomplete user info received:' ${JSON.stringify(payload)}`);
     reply.status(500).send({ message: 'Incomplete user info received to register account' });
     return;
@@ -43,7 +43,7 @@ export const handleRegister: ApiMessageHandler = async (
 
   const user = await prisma.user.create({
     data: {
-      Alias: payload.Alias,
+      Alias: secret, // temporary alias until 2FA is verified
       Email: payload.Email,
       Password: hashedPassword,
       Secret2FA: secret,
@@ -76,12 +76,17 @@ export const handleRegister: ApiMessageHandler = async (
 };
 
 export const handleRegisterTotp: ApiMessageHandler = async (
-  payload: { VerifyToken: string},
+  payload: { VerifyToken: string, Alias : string },
   request,
   prisma,
   fastify,
   reply
 ) => {
+  if (await checkAccountExists(payload.Alias, null, prisma)) {
+    fastify.log.error(`Alias already exists:, ${payload.Alias}`);
+    reply.status(400).send({ message: 'Alias already exists' });
+    return;
+  }
   const tempToken : string | undefined = request.cookies.tempAuth;
   if (!tempToken) {
     console.log("No temp token found in cookies");
@@ -94,9 +99,7 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     reply.status(401).send({ message: 'Session expired' });
     return;
   }
-
   const userId = decoded.sub;
-  
   let user = await prisma.user.findUnique({ where: { ID: userId } });
   if (!user) {
     reply.status(400).send({ message: 'User not found' });
@@ -113,7 +116,8 @@ export const handleRegisterTotp: ApiMessageHandler = async (
     return;
   user = await prisma.user.update({
     where: { ID: user.ID },
-    data: { PendingAccount: false }
+    data: { PendingAccount: false, Alias : payload.Alias
+     }
   });
   if (!user) {
     fastify.log.error(`Failed to update user after 2FA verification:`);

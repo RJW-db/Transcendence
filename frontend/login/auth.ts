@@ -84,7 +84,7 @@ async function show2FaPage(container: HTMLDivElement) {
       return;
     }
     if (!response.ok) {
-      const errorBox = appRoot.querySelector('#verifyError');
+      const errorBox = container.querySelector('#verifyError');
       errorBox!.textContent = `Error: ${result.message}`;
     }
   }
