@@ -1,10 +1,9 @@
 import type { ApiMessageHandler } from '../handlers/loginHandler';
 import { JWT_SECRET, TOKEN_TIMES, generateJWT, decodeJWT } from '../authentication/jsonWebToken';
-import { db } from '../database/database';
 
 export const getCurrentLoginInfo: ApiMessageHandler = async (
   payload,
-  request,
+  db,
   prisma,
   fastify,
   reply
@@ -16,8 +15,8 @@ export const getCurrentLoginInfo: ApiMessageHandler = async (
       return;
     }
     const userId = decoded.sub;
-    const user = await db.findUser({ ID: userId }, reply, { messages: { P2025: 'User not found' }, autoReply: true });
-    if (!db.isDatabaseOperationSuccessful() || !user) {
+    const user = await prisma.user.findUnique({ where: { ID: userId } }, { logMessage: 'Finding user in getCurrentLoginInfo', errorCode: 'P2025' });
+    if (!user) {
       return;
     }
 
@@ -32,4 +31,3 @@ export const getCurrentLoginInfo: ApiMessageHandler = async (
         },
     });
 }
-

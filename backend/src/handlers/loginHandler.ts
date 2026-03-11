@@ -1,14 +1,14 @@
 import { WebSocket } from 'ws';
 import { PrismaClient } from '@prisma/client';
 import {FastifyRequest, FastifyInstance, FastifyReply} from 'fastify';
-
+import { Database } from '../database/database';
 // const prisma = new PrismaClient();
 
 
 export type ApiMessageHandler = (
   payload: any,
   request: FastifyRequest,
-  prisma: PrismaClient,
+  db: Database,
   fastify: FastifyInstance,
   reply: FastifyReply
 ) => Promise<void> | void;

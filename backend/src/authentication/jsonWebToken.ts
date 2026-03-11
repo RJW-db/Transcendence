@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { refreshUserToken } from './refreshToken';
+import { Database } from '../database/database';
 
 
 export const JWT_SECRET = process.env.JWT_SECRET || (() => {
@@ -95,7 +96,7 @@ export function decodeJWT(token: string): JWTPayload | null {
   }
 }
 
-async function authenticateUserBase(request: any, reply: any, prisma: any) {
+async function authenticateUserBase(request: any, reply: any, db: Database) {
   const payload: JWTPayload | null = decodeJWT(request.cookies.jwt);
   const now: number = Math.floor(Date.now() / 1000);
   if (payload && payload.exp - payload.iat <= TOKEN_TIMES.SHORT_LIVED_TOKEN_SECONDS) {
@@ -105,9 +106,9 @@ async function authenticateUserBase(request: any, reply: any, prisma: any) {
   if (payload == null) {
     return null;
   }
- 
+
   const userId = payload.sub;
-  const refreshSuccess = await refreshUserToken(userId, request, reply);
+  const refreshSuccess = await refreshUserToken(userId, request, reply, db);
   if (refreshSuccess) {
     const newJwt = generateShortLivedJWT(userId, reply);
     return decodeJWT(newJwt);
@@ -115,20 +116,17 @@ async function authenticateUserBase(request: any, reply: any, prisma: any) {
   return null;
 }
 
-// Exported wrapper for normal session (10 min JWT)
-export async function authenticateUserSession(request: any, reply: any, prisma: any): Promise<JWTPayload | null> {
-  const payload = await authenticateUserBase(request, reply, prisma);
+export async function authenticateUserSession(request: any, reply: any, db: Database): Promise<JWTPayload | null> {
+  const payload = await authenticateUserBase(request, reply, db);
   if (payload) {
     return payload;
   }
-
   reply.clearCookie('jwt');
-  // reply.status(401).send({ message: 'Authentication required' });
   return null;
 }
 
-export async function authenticateUserRegistration(userID: number, request: any, reply: any, prisma: any): Promise<boolean> {
-  const refreshSuccess = await refreshUserToken(userID, request, reply);
+export async function authenticateUserRegistration(userID: number, request: any, reply: any, db: Database): Promise<boolean> {
+  const refreshSuccess = await refreshUserToken(userID, request, reply, db);
   if (!refreshSuccess) {
     return false;
   }

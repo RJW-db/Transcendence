@@ -1,21 +1,21 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'crypto';
-import { db } from '../database/database';
+import type { Database } from '../database/database';
 
 export const REFRESH_TOKEN_TIME = parseInt(process.env.JWT_REFRESH_TOKEN_DAYS ?? "30", 10) * 24 * 60 * 60; // in seconds
 
-export async function refreshUserToken(userID: number, request: FastifyRequest, reply: FastifyReply) {
+export async function refreshUserToken(userID: number, request: FastifyRequest, reply: FastifyReply, db: Database) {
     const rawToken: string = request.cookies.refreshToken || '';
     if (!rawToken) {
-        const created = await createRefreshToken(userID, reply);
+        const created = await createRefreshToken(userID, reply, db);
         if (!created) {
             reply.clearCookie('refreshToken');
         }
         return created;
     }
 
-    const tokenRecord = await db.findRefreshToken(userID, reply);
-    if (!db.isDatabaseOperationSuccessful() || !tokenRecord) {
+    const tokenRecord = await db['JWTRefreshToken'].findUnique({ where: { userId: userID } }, { logMessage: 'Finding refresh token in refreshUserToken' });
+    if (!tokenRecord) {
         reply.clearCookie('refreshToken');
         return false;
     }
@@ -23,32 +23,31 @@ export async function refreshUserToken(userID: number, request: FastifyRequest, 
     const hashedToken: string = crypto.createHash('sha256').update(rawToken).digest('hex');
     if (!verifyRefreshToken(tokenRecord, hashedToken, userID, reply)) {
         reply.clearCookie('refreshToken');
-        await db.deleteRefreshToken(userID, reply);
+        await db['JWTRefreshToken'].deleteMany({ where: { userId: userID } }, { logMessage: 'Deleting refresh token in refreshUserToken' });
         return false;
     }
     return true;
 }
 
-async function createRefreshToken(userID: number, reply: FastifyReply) {
+async function createRefreshToken(userID: number, reply: FastifyReply, db: Database) {
     const rawToken: string = crypto.randomBytes(32).toString('hex');
     const hashedToken: string = crypto.createHash('sha256').update(rawToken).digest('hex');
 
     // Delete old token if exists, then create new one
-    const deleted = await db.deleteRefreshToken(userID, reply);
-    if (!db.isDatabaseOperationSuccessful() || !deleted) {
-        return false;
-    }
+    await db['JWTRefreshToken'].deleteMany({ where: { userId: userID } }, { logMessage: 'Deleting old refresh token in createRefreshToken' });
 
     const currentTime: Date = new Date();
-    const expiryDate: Date = new Date(currentTime.getTime() + REFRESH_TOKEN_TIME);
+    const expiryDate: Date = new Date(currentTime.getTime() + REFRESH_TOKEN_TIME * 1000);
 
-    const created = await db.createRefreshToken({
-        userId: userID,
-        tokenHash: hashedToken,
-        iat: currentTime,
-        exp: expiryDate
-    }, reply);
-    if (!db.isDatabaseOperationSuccessful() || !created) {
+    const created = await db['JWTRefreshToken'].create({
+        data: {
+            userId: userID,
+            tokenHash: hashedToken,
+            iat: currentTime,
+            exp: expiryDate
+        }
+    }, { logMessage: 'Creating refresh token in createRefreshToken' });
+    if (!created) {
         return false;
     }
 

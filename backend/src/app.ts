@@ -24,7 +24,7 @@ const fastify = Fastify({
   logger: true // Enable logger for better development experience
 });
 
-initializeDatabase(fastify);
+initializeDatabase(fastify, prisma);
 
 // export fastiftCookieOptions
 export const fastifyCookieOptions: FastifyCookieOptions = {

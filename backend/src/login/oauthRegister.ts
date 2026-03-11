@@ -3,12 +3,11 @@ import {verifyToken, generateTOTPsecret} from '../authentication/TOTP'
 import { getGoogleUserInfo, generateCookie} from './accountUtils';
 import { handleLoginPassword, oauthLogin } from './handleLogin';
 import { handleRegister, handleRegisterTotp } from './handleRegister';
-import { db } from '../database/database';
 
 export const handleOauthToken: ApiMessageHandler = async (
   payload: { Token: string },
   request,
-  prisma,
+  db,
   fastify,
   reply
 ) => {
@@ -17,29 +16,27 @@ export const handleOauthToken: ApiMessageHandler = async (
       return;
   }
 
-  const user = await db.findUser({ OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] }, reply, { messages: { P2025: 'User not found' }, autoReply: true });
-  if (!db.isDatabaseOperationSuccessful()) return;
-  if (user) {
-    if (user.OauthLogin === true) {
-      const input = { Email: userInfo.email, Password: 'oauth_placeholder'};
-      return handleLoginPassword(input, request, prisma, fastify, reply);
-    }
-    else {
-      fastify.log.error(`User exists but is not an OAuth user: ${JSON.stringify(user)}`);
-      reply.status(400).send({ message: 'User exists but is not an OAuth user' });
-    }
+  const user = await db.user.findFirst({ where: { OR: [{ Email: userInfo.email }, { Alias: userInfo.name }] } }, { logMessage: 'Finding user in handleOauthToken', errorCode: 'P2025' });
+  if (!user) {
+    const input = {Alias: userInfo.name, Email: userInfo.email, Password: 'tempoauth', oauthLogin: true, };
+    handleRegister(input, request, db, fastify, reply);
+    return;
+  }
 
+  if (user.OauthLogin === true) {
+    const input = { Email: userInfo.email, Password: 'oauth_placeholder'};
+    handleLoginPassword(input, request, db, fastify, reply);
   }
   else {
-      const input = {Alias: userInfo.name, Email: userInfo.email, Password: 'tempoauth', oauthLogin: true, };
-      handleRegister(input, request, prisma, fastify, reply);
+    fastify.log.error(`User exists but is not an OAuth user: ${JSON.stringify(user)}`);
+    reply.status(400).send({ message: 'User exists but is not an OAuth user' });
   }
 }
 
 export const oauthRegister: ApiMessageHandler = async (  
   payload: { Token: string, loginToken: string },
   request,
-  prisma,
+  db,
   fastify,
   reply
 
@@ -48,6 +45,6 @@ export const oauthRegister: ApiMessageHandler = async (
   if (!userInfo) {
       return;
   }
-  return handleRegisterTotp({verifyToken: payload.loginToken}, request, prisma, fastify, reply);
+  return handleRegisterTotp({verifyToken: payload.loginToken}, request, db, fastify, reply);
 
 }
