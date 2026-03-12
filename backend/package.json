@@ -7,7 +7,7 @@
     "dev:backend": "tsx watch app.ts",
     "dev": "run dev:backend",
     "build": "tsc",
-    "start": "npm run build && node dist/app.js"
+    "start": "npm run build && node --enable-source-maps dist/app.js dist/app.js"
   },
   "keywords": [],
   "author": "",

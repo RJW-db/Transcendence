@@ -31,7 +31,14 @@ async function handleRoute() {
 		container.innerHTML = ''
 		container.appendChild(await view());
 		if (path === '/matches/player')
-			socket.emit('joinGame', 'Message from client for cookie test')
+			socket.emit('joinGame', 'Message from client for cookie test', (res: any) => {
+				// console.log("This is our callback: ", res.success, res.message, res.code, "\n", res.stack);
+				if (!res) {
+					console.log("No callback")
+				}
+				else
+					console.log("Something", res.message)
+			})
 
 	}
 }

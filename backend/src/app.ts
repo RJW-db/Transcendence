@@ -7,6 +7,7 @@ const { PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 export const cookie = require('@fastify/cookie');
 import type { FastifyCookieOptions } from '@fastify/cookie'
+import { parse } from "cookie";
 
 
 import { apimessageHandlers, ApiMessageHandler } from './handlers/loginHandler';
@@ -18,10 +19,11 @@ import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
 import { updateUserImage } from './login/updateUserProfile';
+import { socketError } from './utils/socketError';
 
 
 const fastify = Fastify({
-  logger: true // Enable logger for better development experience
+  logger: false // Enable logger for better development experience
 });
 
 // export fastiftCookieOptions
@@ -44,7 +46,13 @@ cors: {
 	origin: "*", // Allow all origins for simplicity, adjust in production
 	methods: ["GET", "POST"]
 },
-path: '/ws'
+path: '/ws',
+connectionStateRecovery: {
+	// The backup duration of sessions and packets (in ms)
+	maxDisconnectionDuration: 2 * 60 * 1000,
+	// Whether to skip middlewares upon successful recovery
+	skipMiddlewares: true,
+}
 });
 let dataid = 1;
 //console.log("client .size is ", clients.size);
@@ -80,9 +88,39 @@ async function register() {
 const gameManager = new GameWorkerManager(io, prisma);
 // const tournamentManager = new TournamentManager(gameManager, io);
 
+// io.use((socket: MySocket, next) => {
+// 	const cookie = socket.request.headers.cookie;
+// 	// console.log(`This is the cookie: ${cookie}`)
+	
+// 	if (!cookie) {
+// 		return next(new Error("No cookie found"))
+// 	}
+
+// 	const preparse = parse(cookie);
+// 	const jwt : string | undefined = preparse.auth;
+// 	if (!jwt) {
+// 		return next(new Error("No cookie found"))
+// 	}
+		
+// 	const data = decodeJWT(jwt, JWT_SECRET);
+
+// 	if (!data) {
+// 		return next(new Error("Incorrect cookie"))
+// 	}
+
+// 	//Check db for user
+
+// 	socket.data.userId = data.sub
+// 	next()
+	
+// })
+
 io.on('connection', (socket: MySocket) => {
-	console.log(`Socket connected: ${socket.id}`);
-	socket.data.userId = dataid;
+	socketError(socket);
+	socket.emit(`homePage`, "Load homepage on connect");
+	if (!socket.data.userId)
+		socket.data.userId = dataid;
+	console.log(`Socket connected: ${socket.data.userId}`);
 	socket.data.matchID = null;
 	// clients.set( socket, dataid);
 	// if (!clients.has(socket)){
@@ -261,19 +299,22 @@ async function gracefulShutdown(signal: string) {
   
   isShuttingDown = true;
   fastify.log.info(`${signal} received, starting graceful shutdown...`);
+//   console.log(`Shutting down, signal: ${signal}`)
 
   try {
-    // 1. Stop accepting new connections
-    fastify.log.info('Closing server to new connections...');
-    await fastify.close();
-
-    // 2. Disconnect all Socket.IO clients gracefully
-    fastify.log.info('Disconnecting all Socket.IO clients...');
-    const sockets = await io.fetchSockets();
-    for (const socket of sockets) {
-      socket.disconnect(true);
-    }
-    io.close();
+	  
+	// 1. Disconnect all Socket.IO clients gracefully
+	fastify.log.info('Disconnecting all Socket.IO clients...');
+	io.emit('internalError', "Server is shutting down");
+	const sockets = await io.fetchSockets();
+	for (const socket of sockets) {
+		socket.disconnect(true);
+	}
+	io.close();
+		
+	// 2. Stop accepting new connections
+	fastify.log.info('Closing server to new connections...');
+	await fastify.close();
 
     // 3. Shutdown game workers
     fastify.log.info('Shutting down game workers...');
@@ -304,4 +345,14 @@ process.on('uncaughtException', (error: Error) => {
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
   fastify.log.error(`Unhandled Rejection - reason: ${reason}`);
   gracefulShutdown('unhandledRejection');
+});
+
+
+// backend/src/index.ts
+
+fastify.get('/health', async (request, reply) => {
+  // Optional: Check if the database is also connected
+  // if (!db.isConnected) return reply.code(500).send('DB Down');
+
+  return { status: 'ok' }; // Returns 200 OK
 });
