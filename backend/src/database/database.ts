@@ -23,47 +23,50 @@ export class Database {
     this.fastify = fastify;
     this.prisma = prisma || new PrismaClient();
     return new Proxy(this, {
-      get: (target, prop) => {
-        if (prop in target.prisma) {
-          const model = (target.prisma as any)[prop];
-          if (typeof model === 'object') {
-            return new Proxy(model, {
-              get: (m, method) => {
-                const fn = m[method];
-                if (typeof fn !== 'function')
-                  return fn;
-                return async (...args: any[]) => {
-                  let ctx: ErrorContext = {};
-                  let errorType = undefined;
-                  if (args.length && typeof args[args.length - 1] === 'object' && args[args.length - 1].type) {
-                    errorType = args.pop().type;
-                  }
-                  if (args.length && typeof args[args.length - 1] === 'object' &&
-                      (args[args.length - 1].logMessage || args[args.length - 1].errorCode)) {
-                    ctx = args.pop();
-                  }
-                  try {
-                    const result = await fn.apply(m, args);
-                    if (result === null) {
-                      const msg = ctx.logMessage || `Prisma ${String(method)} returned null for ${String(prop)}`;
-                      target.fastify.log.error(`[${ctx.errorCode || 'P2025'}] ${msg}`);
-                    }
-                    return result;
-                    // return await fn.apply(m, args);
-                  } catch (e: any) {
-                    const code = e.code || ctx.errorCode || 'UNKNOWN';
-                    const msg = ctx.logMessage || `Prisma error in ${String(prop)}.${String(method)}`;
-                    target.fastify.log.error(`[${code}] ${msg}: ${e.message || e}`);
-                    throw { type: errorType, error: e };
-                  }
-                };
-              }
-            });
-          }
-        }
-        return (target as any)[prop];
-      }
+      get: this._getHandler.bind(this)
     });
+  }
+
+  private _getHandler(target: any, prop: PropertyKey) {
+    if (prop in target.prisma) {
+      const model = (target.prisma as any)[prop];
+      if (typeof model === 'object') {
+        return new Proxy(model, {
+          get: this._modelMethodHandler.bind(this, target, prop)
+        });
+      }
+    }
+    return (target as any)[prop];
+  }
+
+  private _modelMethodHandler(target: any, prop: PropertyKey, m: any, method: PropertyKey) {
+    const fn = m[method];
+    if (typeof fn !== 'function') return fn;
+    return async (...args: any[]) => {
+      let ctx: ErrorContext = {};
+      let errorType = undefined;
+      if (args.length && typeof args[args.length - 1] === 'object' && args[args.length - 1].type) {
+        errorType = args.pop().type;
+      }
+      if (args.length && typeof args[args.length - 1] === 'object' &&
+          (args[args.length - 1].logMessage || args[args.length - 1].errorCode)) {
+        ctx = args.pop();
+      }
+      try {
+        const result = await fn.apply(m, args);
+        if (result === null) {
+          const msg = ctx.logMessage || `Prisma ${String(method)} returned null for ${String(prop)}`;
+          target.fastify.log.error(`[${ctx.errorCode || 'P2025'}] ${msg}`);
+          throw new Error('Manual test error: result was null');
+        }
+        return result;
+      } catch (e: any) {
+        const code = e.code || ctx.errorCode || 'UNKNOWN';
+        const msg = ctx.logMessage || `Prisma error in ${String(prop)}.${String(method)}`;
+        target.fastify.log.error(`[${code}] ${msg}: ${e.message || e}`);
+        throw { type: errorType, error: e, code };
+      }
+    };
   }
 
   async disconnect() {

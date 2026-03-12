@@ -12,17 +12,20 @@ export const handleRegister: ApiMessageHandler = async (
   fastify,
   reply
 ) => {
-  const existingUser = await db.user.findFirst({
-    where: {
-      OR: [
-        { Alias: payload.Alias },
-        { Email: payload.Email }
-      ]
-    }
-  }, { logMessage: 'Checking for existing user in handleRegister' });
-// const existingUser = await db.user.findFirst({
-//   where: { nonExistentField: "value" }, // Field does not exist in your schema
-// }, { logMessage: "Testing invalid field in findFirst" });
+  // const existingUser = await db.user.findFirst({
+  //   where: {
+  //     OR: [
+  //       { Alias: payload.Alias },
+  //       { Email: payload.Email }
+  //     ]
+  //   }
+  // }, { logMessage: 'Checking for existing user in handleRegister' });
+const existingUser = await db.user.findFirst({
+  where: { nonExistentField: "value" }, // Field does not exist in your schema
+}, { logMessage: "Testing invalid field in findFirst" });
+// const existingUser = await db.user.findUnique({
+//   where: { Email: "this_email_does_not_exist@example.com" }
+// }, { logMessage: "Testing manual error on null result" });
 
   if (existingUser) {
     fastify.log.error(`Attempt to register with existing email or alias: ${JSON.stringify(payload)}`);

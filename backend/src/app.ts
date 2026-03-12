@@ -17,7 +17,7 @@ import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { ErrorHandler } from './utils/errorHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
-import { initializeDatabase, closeDatabase } from './database/database';
+import { db, initializeDatabase, closeDatabase } from './database/database';
 
 
 const fastify = Fastify({
@@ -188,7 +188,7 @@ fastify.post('/api', async (request: FastifyRequest, reply: FastifyReply) => {
             console.log('Handler name:', apiHandler?.name);
             
             if (apiHandler) {
-                await apiHandler(data.Payload, request, prisma, fastify, reply);
+                await apiHandler(data.Payload, request, db, fastify, reply);
             } else {
                 console.log('No handler found for type:', data.type);
                 reply.status(400).send({message: `Unknown request type: ${data.type}`});
@@ -197,9 +197,15 @@ fastify.post('/api', async (request: FastifyRequest, reply: FastifyReply) => {
             console.log('No type field in request body');
             reply.status(400).send({message: `Missing type field`});
         }
-    } catch (err) {
-        console.error('Caught error:', err);
-        reply.status(400).send({message: `Bad request!`})
+    } catch (err: any) {
+		console.log('Error code:', err.code);
+		if (err.code === 'P2002') {
+			reply.status(409).send({ message: 'Duplicate entry', code: err.code });
+		} else if (err.code === 'P2025') {
+			reply.status(404).send({ message: 'Not found', code: err.code });
+		} else {
+			reply.status(400).send({ message: 'Bad request', code: err.code });
+		}
     }
 });
 
