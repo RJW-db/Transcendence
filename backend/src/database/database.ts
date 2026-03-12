@@ -61,7 +61,7 @@ export class Database {
         }
         return result;
       } catch (e: any) {
-        const code = e.code || ctx.errorCode || 'UNKNOWN';
+        const code = ctx.errorCode || e.code || 'INTERNAL_SERVER_ERROR';
         const msg = ctx.logMessage || `Prisma error in ${String(prop)}.${String(method)}`;
         target.fastify.log.error(`[${code}] ${msg}: ${e.message || e}`);
         throw { type: errorType, error: e, code };

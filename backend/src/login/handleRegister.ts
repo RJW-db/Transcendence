@@ -22,7 +22,7 @@ export const handleRegister: ApiMessageHandler = async (
   // }, { logMessage: 'Checking for existing user in handleRegister' });
 const existingUser = await db.user.findFirst({
   where: { nonExistentField: "value" }, // Field does not exist in your schema
-}, { logMessage: "Testing invalid field in findFirst" });
+}, { logMessage: "Testing invalid field in findFirst", errorCode: 'P2025' });
 // const existingUser = await db.user.findUnique({
 //   where: { Email: "this_email_does_not_exist@example.com" }
 // }, { logMessage: "Testing manual error on null result" });
