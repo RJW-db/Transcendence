@@ -175,11 +175,8 @@ io.on('connection', (socket: MySocket) => {
 
 console.log('Socket.IO initialized');
 
-
-
-//fastify.register(async function (fastify: FastifyInstance) {
-fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
-	try{
+fastify.post('/api', async (request: FastifyRequest, reply: FastifyReply) => {
+    try{
         const	data = request.body as any;
         console.log('=== API REQUEST RECEIVED ===');
         console.log('Request body:', JSON.stringify(data));
@@ -191,7 +188,7 @@ fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
             console.log('Handler name:', apiHandler?.name);
             
             if (apiHandler) {
-                apiHandler(data.Payload, request, prisma, fastify, reply);
+                await apiHandler(data.Payload, request, prisma, fastify, reply);
             } else {
                 console.log('No handler found for type:', data.type);
                 reply.status(400).send({message: `Unknown request type: ${data.type}`});
@@ -200,15 +197,11 @@ fastify.post('/api', (request: FastifyRequest, reply: FastifyReply) => {
             console.log('No type field in request body');
             reply.status(400).send({message: `Missing type field`});
         }
-	}catch{
-		console.log('faild to parse or no type !')
-		reply.status(400).send({message: `Bad request!`})
-	}
-	
-	
-
+    } catch (err) {
+        console.error('Caught error:', err);
+        reply.status(400).send({message: `Bad request!`})
+    }
 });
-//});
 
 
 // Start the server
