@@ -2,40 +2,28 @@ import { Server, Socket } from 'socket.io';
 import { PrismaClient } from '@prisma/client'; // Adjust if using a different DB
 import { GameWorkerManager } from '../engine/workerManager';
 import { TournamentManager } from '../engine/tournamentManager';
+import type {
+  ActionResponse,
+  UserData,
+  OutgoingDirectMessage,
+  IncomingDirectMessage,
+  OutgoingFriendRequest,
+  IncomingFriendRequest,
+} from '@transcendence/shared';
 // import { Logger } from 'pino';                 // Adjust if using a different Logger
 
 // ========================================================
 // 1. EVENT DEFINITIONS
 // ========================================================
 
-export interface UserData {
-  ID: number;
-  alias: string;
-  online: boolean;
-  // TODO: add profile picture
-}
-
-export interface OutgoingDirectMessage {
-  receiverAlias: string;
-  message: string;
-}
-
-export interface IncomingDirectMessage {
-  messageID: number;
-  sender: UserData;
-  dateTime: Date;
-  message: string;
-}
-
-export interface OutgoingFriendRequest {
-  receiverAlias: string;
-}
-
-export interface IncomingFriendRequest {
-  requestID: number;
-  sender: UserData;
-  sentAt: Date;
-}
+export type {
+  ActionResponse,
+  UserData,
+  OutgoingDirectMessage,
+  IncomingDirectMessage,
+  OutgoingFriendRequest,
+  IncomingFriendRequest,
+};
 
 export interface ServerToClientEvents {
   chatMessage: (msg: string) => void;
@@ -58,12 +46,12 @@ export interface ClientToServerEvents {
   joinGame: (msg: string) => void;
   joinTournament: (msg: string) => void;
   startTournament: (msg: string) => void;
-  sendDirectMessage: (msg: OutgoingDirectMessage, callback: (response: { success: boolean; error?: string }) => void) => void;
-  loadUnreadMessages: (callback: (response: { success: boolean, error?: string}) => void) => void;
+  sendDirectMessage: (msg: OutgoingDirectMessage, callback: (response: ActionResponse) => void) => void;
+  loadUnreadMessages: (callback: (response: ActionResponse) => void) => void;
   readMessage: (messageID: number) => void;
-  sendFriendRequest: (req: OutgoingFriendRequest, callback: (response: { success: boolean, error?: string}) => void) => void;
-  acceptFriendRequest: (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => void;
-  declineFriendRequest: (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => void;
+  sendFriendRequest: (req: OutgoingFriendRequest, callback: (response: ActionResponse) => void) => void;
+  acceptFriendRequest: (requestID: number, callback: (response: ActionResponse) => void) => void;
+  declineFriendRequest: (requestID: number, callback: (response: ActionResponse) => void) => void;
   // Add other events here
 }
 

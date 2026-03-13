@@ -26,6 +26,8 @@ services:
     # image: node:20-alpine # We can use the same Node.js image
     build:
       context: ./backend
+      additional_contexts:
+        shared: ./shared
     working_dir: /app
     user: root
     volumes:

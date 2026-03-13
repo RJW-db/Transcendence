@@ -1,28 +1,10 @@
 import { socket } from './socket';
-
-interface UserData {
-	ID: number;
-	alias: string;
-	online: boolean;
-}
-
-interface IncomingDirectMessage {
-	messageID: number;
-	sender: UserData;
-	message: string;
-	dateTime: Date;
-}
-
-interface IncomingFriendRequest {
-	requestID: number;
-	sender: UserData;
-	sentAt: Date;
-}
-
-type ActionResponse = {
-	success: boolean;
-	error?: string;
-};
+import type {
+	ActionResponse,
+	UserData,
+	IncomingDirectMessage,
+	IncomingFriendRequest,
+} from '@transcendence/shared';
 
 declare global {
 	interface Window {

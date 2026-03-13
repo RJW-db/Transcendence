@@ -50,6 +50,10 @@
     "lib": ["es2020"],
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@transcendence/shared": ["../shared/index.d.ts"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

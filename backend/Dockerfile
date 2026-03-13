@@ -7,6 +7,7 @@ WORKDIR /app
 # Copy package.json and package-lock.json (or yarn.lock)
 # to install dependencies
 COPY package*.json .
+COPY --from=shared . /shared
 
 # Install app dependencies
 RUN apk update && \

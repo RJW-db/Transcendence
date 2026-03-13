@@ -1,11 +1,11 @@
-import { SocketContext, OutgoingDirectMessage, IncomingDirectMessage } from '../types';
+import { SocketContext, OutgoingDirectMessage, IncomingDirectMessage, ActionResponse } from '../types';
 
 // Add logger instead of using console.log
 
 export async function directMessageHandler({ io, socket, db }: SocketContext) {
 
 	// TODO: check if reciever hasn't blocked sender
-	socket.on('sendDirectMessage', async (msg: OutgoingDirectMessage, callback: (response: { success: boolean, error?: string}) => void) => {
+	socket.on('sendDirectMessage', async (msg: OutgoingDirectMessage, callback: (response: ActionResponse) => void) => {
 		const senderID = socket.data.userId;
 
 		// Check authentication and input
@@ -65,7 +65,7 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 	});
 
 	
-	socket.on('loadUnreadMessages', async (callback: (response: { success: boolean, error?: string}) => void) => {
+	socket.on('loadUnreadMessages', async (callback: (response: ActionResponse) => void) => {
 		try {
 			const userID = socket.data.userId;
 			if (!userID) return callback({ success: false, error: "Not authenticated" });

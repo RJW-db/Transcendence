@@ -1,10 +1,10 @@
 import { SocketContext } from '../types';
-import type { IncomingFriendRequest, OutgoingFriendRequest, UserData } from '../types';
+import type { ActionResponse, IncomingFriendRequest, OutgoingFriendRequest, UserData } from '../types';
 
 
 export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
-	async function acceptFriendRequest(requestID: number, receiverID: number): Promise<{ success: boolean, error?: string }> {
+	async function acceptFriendRequest(requestID: number, receiverID: number): Promise<ActionResponse> {
 		const request = await db.friendRequest.findUnique({
 			where: { ID: requestID },
 			include: { Sender: true }
@@ -51,7 +51,7 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
 
 	// TODO: Check if receiver has blocked sender
-	socket.on('sendFriendRequest', async (req: OutgoingFriendRequest, callback: (response: { success: boolean, error?: string}) => void) => {
+	socket.on('sendFriendRequest', async (req: OutgoingFriendRequest, callback: (response: ActionResponse) => void) => {
 		const senderID = socket.data.userId;
 		const senderAlias = socket.data.alias;
 
@@ -134,7 +134,7 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 	});
 
 
-	socket.on('acceptFriendRequest', async (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => {
+	socket.on('acceptFriendRequest', async (requestID: number, callback: (response: ActionResponse) => void) => {
 		const receiverID = socket.data.userId;
 		const receiverAlias = socket.data.alias;
 
@@ -151,7 +151,7 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 	});
 
 
-	socket.on('declineFriendRequest', async (requestID: number, callback: (response: { success: boolean, error?: string}) => void) => {
+	socket.on('declineFriendRequest', async (requestID: number, callback: (response: ActionResponse) => void) => {
 		const receiverID = socket.data.userId;
 		const receiverAlias = socket.data.alias;
 
