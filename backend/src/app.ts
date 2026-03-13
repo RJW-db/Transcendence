@@ -17,7 +17,7 @@ import {TournamentManager } from './engine/tournamentManager';
 import { tournamentHandler } from './handlers/tournamentHandler';
 import { ErrorHandler } from './utils/errorHandler';
 import { directMessageHandler } from './handlers/directMessageHandlers';
-import { db, initializeDatabase, closeDatabase } from './database/database';
+import { db, initializeDatabase, closeDatabase, dbError } from './database/database';
 
 
 const fastify = Fastify({
@@ -197,25 +197,15 @@ fastify.post('/api', async (request: FastifyRequest, reply: FastifyReply) => {
             console.log('No type field in request body');
             reply.status(400).send({message: `Missing type field`});
         }
-    } catch (err: any) {
-		console.log('Error code:', err.code);
-		if (err.code === 'P2002') {
-			if (err.type === 'duplicate_email') {
-				reply.status(409).send({ message: 'Email already exists', code: err.code });
-			} else if (err.type === 'duplicate_alias') {
-				reply.status(409).send({ message: 'Alias already exists', code: err.code });
-			} else {
-				reply.status(409).send({ message: 'Duplicate entry', code: err.code });
-			}
-		} else if (err.code === 'P2025') {
-			reply.status(404).send({ message: 'Not found', code: err.code });
+	} catch (err: any) {
+		if (err instanceof dbError) {
+			reply.status(err.statusCode).send({ message: err.customMessage || err.originalError, code: err.statusCode });
 		} else if (err.error && err.error.name === 'PrismaClientValidationError') {
-			// Prisma validation error (e.g., invalid field in query)
 			reply.status(400).send({ message: 'Invalid query', code: 'BAD_REQUEST' });
 		} else {
 			reply.status(400).send({ message: 'Bad request', code: err.code });
 		}
-    }
+	}
 });
 
 
