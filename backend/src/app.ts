@@ -44,12 +44,12 @@ cors: {
 },
 path: '/ws'
 });
-let dataid = 1;
+let dataId = 1;
 //console.log("client .size is ", clients.size);
 async function register() {
 
-	while (dataid <= 20) {
-		let name = `user${dataid}`
+	while (dataId <= 20) {
+		let name = `user${dataId}`
 		let mail = `${name}@gmail.com`
 		let user = await prisma.user.findFirst({
 			where: {Alias: name}
@@ -59,8 +59,8 @@ async function register() {
 				data: {
 					Alias: name,
 					Email: mail,
-					Secret2FA: `seed-secret-${dataid}`,
-					Password: `${dataid}`,
+					Secret2FA: `seed-secret-${dataId}`,
+					Password: `${dataId}`,
 					Online: true,
 					CreationDate: new Date()
 				}
@@ -68,9 +68,9 @@ async function register() {
 		}
 		if (user)
 			console.log(`${user.Alias}`)
-		dataid++;
+		dataId++;
 	}
-	dataid = 1;
+	dataId = 1;
 }
 register();
 
@@ -82,13 +82,13 @@ io.on('connection', (socket: MySocket) => {
 
 	// For testing:
 	const socketAmount = 2; // MAX 20 since no more test accounts
-	const clampedId = Math.min(dataid, socketAmount);
+	const clampedId = Math.min(dataId, socketAmount);
 	socket.data.userId = clampedId;
 	socket.data.alias = `user${clampedId}`;
 	console.log(`Socket connected: ${socket.id} as ${socket.data.alias}`);
 	
 	socket.data.matchID = null;
-	// clients.set( socket, dataid);
+	// clients.set( socket, dataId);
 	// if (!clients.has(socket)){
 	// 	console.log("Failed to add client to map");
 	// }
@@ -116,9 +116,9 @@ io.on('connection', (socket: MySocket) => {
 		// tournamentManager
 		// logger: fastify.log,
 	};
-	// socket.data.userId = dataid;
+	// socket.data.userId = dataId;
 	socket.data.cookie = 'cookie';
-	dataid++;
+	dataId++;
 	gameHandler(ctx);
 	serverHandler(ctx);
 	tournamentHandler(ctx);

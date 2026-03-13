@@ -1,16 +1,18 @@
 import { SocketContext, OutgoingDirectMessage, IncomingDirectMessage, ActionResponse } from '../types';
+import { requireUser } from '../services/authService';
 
 // Add logger instead of using console.log
+// TODO: clean up handler by adding service functions
 
 export async function directMessageHandler({ io, socket, db }: SocketContext) {
 
 	// TODO: check if reciever hasn't blocked sender
 	socket.on('sendDirectMessage', async (msg: OutgoingDirectMessage, callback: (response: ActionResponse) => void) => {
-		const senderID = socket.data.userId;
+		const auth = requireUser(socket, callback);
+		if (!auth)
+			return;
+		const { userId: senderId, alias: senderAlias } = auth;
 
-		// Check authentication and input
-		if (!senderID)
-			return callback({ success: false, error: "Not authenticated" });
 		if (!msg.message || msg.message.trim().length === 0) {
 			return callback({ success: false, error: "Message cannot be empty" });
 		}
@@ -37,7 +39,7 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 					DateTime: new Date(),
 					IsRead: false,
 					Sender: {
-						connect: { ID: senderID },
+						connect: { ID: senderId },
 					},
 					Receiver: {
 						connect: { ID: receiver.ID },
@@ -47,10 +49,10 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 
 			// Send to receiver
 			const outgoingMessage: IncomingDirectMessage = {
-				messageID: savedMessage.ID,
+				messageId: savedMessage.ID,
 				sender: {
-					ID: senderID,
-					alias: socket.data.alias,
+					id: senderId,
+					alias: senderAlias,
 					online: true
 				},
 				message: savedMessage.Message,
@@ -67,13 +69,15 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 	
 	socket.on('loadUnreadMessages', async (callback: (response: ActionResponse) => void) => {
 		try {
-			const userID = socket.data.userId;
-			if (!userID) return callback({ success: false, error: "Not authenticated" });
+			const auth = requireUser(socket, callback);
+			if (!auth)
+				return;
+			const { userId } = auth;
 
 			// Retreive unread messages from database
 			const rows = await db.message.findMany({
 				where: {
-					ReceiverID: userID,
+					ReceiverID: userId,
 					IsRead: false
 				},
 				include: {
@@ -83,9 +87,9 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 
 			// Send to user
 			const messages: IncomingDirectMessage[] = rows.map((m: typeof rows[number]) => ({
-				messageID: m.ID,
+				messageId: m.ID,
 				sender: {
-					ID: m.Sender.ID,
+					id: m.Sender.ID,
 					alias: m.Sender.Alias,
 					online: m.Sender.Online
 				},
@@ -101,11 +105,11 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 	});
 
 	// TODO: Check for error and if its wrong receiver catch and throw more obvious error
-	socket.on('readMessage', async (messageID: number) => {
+	socket.on('readMessage', async (messageId: number) => {
 		try {
 			await db.message.update({
 				where: {
-					ID: messageID,
+					ID: messageId,
 					ReceiverID: socket.data.userId
 				},
 				data: { IsRead: true }

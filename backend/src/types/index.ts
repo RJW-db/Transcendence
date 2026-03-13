@@ -9,6 +9,7 @@ import type {
   IncomingDirectMessage,
   OutgoingFriendRequest,
   IncomingFriendRequest,
+  BlockActionRequest,
 } from '@transcendence/shared';
 // import { Logger } from 'pino';                 // Adjust if using a different Logger
 
@@ -23,6 +24,7 @@ export type {
   IncomingDirectMessage,
   OutgoingFriendRequest,
   IncomingFriendRequest,
+  BlockActionRequest,
 };
 
 export interface ServerToClientEvents {
@@ -48,10 +50,12 @@ export interface ClientToServerEvents {
   startTournament: (msg: string) => void;
   sendDirectMessage: (msg: OutgoingDirectMessage, callback: (response: ActionResponse) => void) => void;
   loadUnreadMessages: (callback: (response: ActionResponse) => void) => void;
-  readMessage: (messageID: number) => void;
+  readMessage: (messageId: number) => void;
   sendFriendRequest: (req: OutgoingFriendRequest, callback: (response: ActionResponse) => void) => void;
-  acceptFriendRequest: (requestID: number, callback: (response: ActionResponse) => void) => void;
-  declineFriendRequest: (requestID: number, callback: (response: ActionResponse) => void) => void;
+  acceptFriendRequest: (requestId: number, callback: (response: ActionResponse) => void) => void;
+  declineFriendRequest: (requestId: number, callback: (response: ActionResponse) => void) => void;
+  blockUser: (req: BlockActionRequest, callback: (response: ActionResponse) => void) => void;
+  unblockUser: (req: BlockActionRequest, callback: (response: ActionResponse) => void) => void;
   // Add other events here
 }
 

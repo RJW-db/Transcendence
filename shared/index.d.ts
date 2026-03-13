@@ -4,7 +4,7 @@ export interface ActionResponse {
 }
 
 export interface UserData {
-  ID: number;
+  id: number;
   alias: string;
   online: boolean;
 }
@@ -15,7 +15,7 @@ export interface OutgoingDirectMessage {
 }
 
 export interface IncomingDirectMessage {
-  messageID: number;
+  messageId: number;
   sender: UserData;
   dateTime: Date;
   message: string;
@@ -26,7 +26,11 @@ export interface OutgoingFriendRequest {
 }
 
 export interface IncomingFriendRequest {
-  requestID: number;
+  requestId: number;
   sender: UserData;
   sentAt: Date;
+}
+
+export interface BlockActionRequest {
+	receiverAlias: string;
 }

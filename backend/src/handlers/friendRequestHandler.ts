@@ -1,31 +1,24 @@
 import { SocketContext } from '../types';
 import type { ActionResponse, IncomingFriendRequest, OutgoingFriendRequest, UserData } from '../types';
+import { requireUser } from '../services/authService';
+import { findFriendRequest } from '../services/friendRequestService';
+import { areFriends } from 'src/services/relationshipService';
 
+// TODO: clean up handler by adding service functions
 
 export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
-	async function acceptFriendRequest(requestID: number, receiverID: number): Promise<ActionResponse> {
-		const request = await db.friendRequest.findUnique({
-			where: { ID: requestID },
-			include: { Sender: true }
-		});
-
+	async function acceptFriendRequest(requestId: number, receiverId: number): Promise<ActionResponse> {
+		const request = await findFriendRequest(db, requestId);
 		if (!request)
 			return { success: false, error: "No request found" };
-		if (request.ReceiverID !== receiverID)
+		if (request.ReceiverID !== receiverId)
 			return { success: false, error: "Unauthorized" };
 
 		// Check if already friends and remove request if so
-		const existing = await db.friend.findFirst({
-			where: {
-				OR: [
-					{ User1ID: receiverID, User2ID: request.SenderID },
-					{ User1ID: request.SenderID, User2ID: receiverID }
-				]
-			}
-		});
+		const existing = await areFriends(db, receiverId, request.SenderID);
 		if (existing) {
-			db.friendRequest.delete({ where: { ID: requestID } }).catch((err: unknown) =>
+			db.friendRequest.delete({ where: { ID: requestId } }).catch((err: unknown) =>
 				console.error("Failed to clean up stale friend request:", err)
 			);
 			return { success: false, error: "Already friends" };
@@ -34,29 +27,29 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 		// Create friendship
 		await db.friend.create({
 			data: {
-				User1ID: receiverID,
+				User1ID: receiverId,
 				User2ID: request.SenderID,
 				DateBefriended: new Date()
 			}
 		});
 
 		// Delete request
-		db.friendRequest.delete({ where: { ID: requestID } }).catch((err: unknown) =>
+		db.friendRequest.delete({ where: { ID: requestId } }).catch((err: unknown) =>
 			console.error("Failed to clean up stale friend request:", err)
 		);
-		io.to(request.SenderID.toString()).emit('newFriend', { ID: receiverID, alias: socket.data.alias, online: true });
-		io.to(receiverID.toString()).emit('newFriend', { ID: request.SenderID, alias: request.Sender.Alias, online: request.Sender.Online });
+		io.to(request.SenderID.toString()).emit('newFriend', { id: receiverId, alias: socket.data.alias, online: true });
+		io.to(receiverId.toString()).emit('newFriend', { id: request.SenderID, alias: request.Sender.Alias, online: request.Sender.Online });
 		return { success: true };
 	}
 
 
 	// TODO: Check if receiver has blocked sender
 	socket.on('sendFriendRequest', async (req: OutgoingFriendRequest, callback: (response: ActionResponse) => void) => {
-		const senderID = socket.data.userId;
-		const senderAlias = socket.data.alias;
+		const auth = requireUser(socket, callback);
+		if (!auth)
+			return;
+		const { userId: senderId, alias: senderAlias } = auth;
 
-		if (!senderID || !senderAlias)
-			return callback({ success: false, error: "Not authenticated" });
 		if (!req.receiverAlias || req.receiverAlias.trim().length === 0)
 			return callback({ success: false, error: "Username cannot be empty" });
 		if (senderAlias === req.receiverAlias)
@@ -74,8 +67,8 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 			const existing = await db.friend.findFirst({
 				where: {
 					OR: [
-						{ User1ID: receiver.ID, User2ID: senderID },
-						{ User1ID: senderID, User2ID: receiver.ID }
+						{ User1ID: receiver.ID, User2ID: senderId },
+						{ User1ID: senderId, User2ID: receiver.ID }
 					]
 				}
 			});
@@ -86,17 +79,17 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 			const existingRequest = await db.friendRequest.findFirst({
 				where: {
 					OR: [
-						{ SenderID: senderID, ReceiverID: receiver.ID },
-						{ SenderID: receiver.ID, ReceiverID: senderID }
+						{ SenderID: senderId, ReceiverID: receiver.ID },
+						{ SenderID: receiver.ID, ReceiverID: senderId }
 					]
 				}
 			});
 			if (existingRequest) {
-				if (existingRequest.SenderID === senderID) {
+				if (existingRequest.SenderID === senderId) {
 					return callback({ success: false, error: "Friend request already sent" });
 				}
 				// Accept friend request since both requested each other
-				const result = await acceptFriendRequest(existingRequest.ID, senderID);
+				const result = await acceptFriendRequest(existingRequest.ID, senderId);
 				if (!result.success)
 					return callback(result);
 				return callback({ success: true });
@@ -107,7 +100,7 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 				data: {
 					SentAt: new Date(),
 					Sender: {
-						connect: { ID: senderID },
+						connect: { ID: senderId },
 					},
 					Receiver: {
 						connect: { ID: receiver.ID },
@@ -117,9 +110,9 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
 			// Send to user
 			const outgoingRequest: IncomingFriendRequest = {
-				requestID: friendRequest.ID,
+				requestId: friendRequest.ID,
 				sender: {
-					ID: senderID,
+					id: senderId,
 					alias: senderAlias,
 					online: true
 				},
@@ -134,15 +127,14 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 	});
 
 
-	socket.on('acceptFriendRequest', async (requestID: number, callback: (response: ActionResponse) => void) => {
-		const receiverID = socket.data.userId;
-		const receiverAlias = socket.data.alias;
-
-		if (!receiverID || !receiverAlias)
-			return callback({ success: false, error: "Not authenticated" });
+	socket.on('acceptFriendRequest', async (requestId: number, callback: (response: ActionResponse) => void) => {
+		const auth = requireUser(socket, callback);
+		if (!auth)
+			return;
+		const { userId: receiverId } = auth;
 
 		try {
-			const result = await acceptFriendRequest(requestID, receiverID);
+			const result = await acceptFriendRequest(requestId, receiverId);
 			callback(result);
 		} catch (error) {
 			console.error("Prisma error accepting friend request:", error);
@@ -151,23 +143,22 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 	});
 
 
-	socket.on('declineFriendRequest', async (requestID: number, callback: (response: ActionResponse) => void) => {
-		const receiverID = socket.data.userId;
-		const receiverAlias = socket.data.alias;
-
-		if (!receiverID || !receiverAlias)
-			return callback({ success: false, error: "Not authenticated" });
+	socket.on('declineFriendRequest', async (requestId: number, callback: (response: ActionResponse) => void) => {
+		const auth = requireUser(socket, callback);
+		if (!auth)
+			return;
+		const { userId: receiverId } = auth;
 
 		try {
 			const request = await db.friendRequest.findUnique({
-				where: { ID: requestID }
+				where: { ID: requestId }
 			});
 			if (!request)
 				return callback({ success: false, error: "No request found" });
-			if (request.ReceiverID !== receiverID)
+			if (request.ReceiverID !== receiverId)
 				return callback({ success: false, error: "Unauthorized" });
 
-			await db.friendRequest.delete({ where: { ID: requestID }});
+			await db.friendRequest.delete({ where: { ID: requestId }});
 			callback({ success: true });
 
 		} catch (error) {
