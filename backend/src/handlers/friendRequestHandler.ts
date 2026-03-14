@@ -1,15 +1,16 @@
 import { SocketContext } from '../types';
 import type { ActionResponse, IncomingFriendRequest, OutgoingFriendRequest, UserData } from '../types';
 import { requireUser } from '../services/authService';
-import { findFriendRequest } from '../services/friendRequestService';
-import { areFriends } from 'src/services/relationshipService';
+import { createFriendRequest, finalizeFriendRequest, findFriendRequestById, findFriendRequestByUsers, notifyFriendRequestSent, removeFriendRequest } from '../services/friendRequestService';
+import { areFriends, notifyFriendshipCreated } from '../services/relationshipService';
+import { findUser } from '../services/userService';
 
 // TODO: clean up handler by adding service functions
 
 export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
-	async function acceptFriendRequest(requestId: number, receiverId: number): Promise<ActionResponse> {
-		const request = await findFriendRequest(db, requestId);
+	async function handleAcceptFriendRequest(requestId: number, receiverId: number): Promise<ActionResponse> {
+		const request = await findFriendRequestById(db, requestId);
 		if (!request)
 			return { success: false, error: "No request found" };
 		if (request.ReceiverID !== receiverId)
@@ -18,27 +19,13 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 		// Check if already friends and remove request if so
 		const existing = await areFriends(db, receiverId, request.SenderID);
 		if (existing) {
-			db.friendRequest.delete({ where: { ID: requestId } }).catch((err: unknown) =>
-				console.error("Failed to clean up stale friend request:", err)
-			);
+			await removeFriendRequest(db, requestId);
 			return { success: false, error: "Already friends" };
 		}
 
 		// Create friendship
-		await db.friend.create({
-			data: {
-				User1ID: receiverId,
-				User2ID: request.SenderID,
-				DateBefriended: new Date()
-			}
-		});
-
-		// Delete request
-		db.friendRequest.delete({ where: { ID: requestId } }).catch((err: unknown) =>
-			console.error("Failed to clean up stale friend request:", err)
-		);
-		io.to(request.SenderID.toString()).emit('newFriend', { id: receiverId, alias: socket.data.alias, online: true });
-		io.to(receiverId.toString()).emit('newFriend', { id: request.SenderID, alias: request.Sender.Alias, online: request.Sender.Online });
+		await finalizeFriendRequest(db, receiverId, request.SenderID, requestId);
+		notifyFriendshipCreated(io, request.SenderID, receiverId, socket.data.alias, request.Sender.Alias, request.Sender.Online);
 		return { success: true };
 	}
 
@@ -57,68 +44,33 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 
 		try {
 			// Find receiver
-			const receiver = await db.user.findUnique({
-				where: { Alias: req.receiverAlias }
-			});
+			const receiver = await findUser(db, req.receiverAlias);
 			if (!receiver)
 				return callback({ success: false, error: "User does not exist" });
 
 			// Check if user are already friends
-			const existing = await db.friend.findFirst({
-				where: {
-					OR: [
-						{ User1ID: receiver.ID, User2ID: senderId },
-						{ User1ID: senderId, User2ID: receiver.ID }
-					]
-				}
-			});
+			const existing = await areFriends(db, receiver.ID, senderId);
 			if (existing)
 				return callback({ success: false, error: "Already friends"});
 
 			// Check if friend request exists
-			const existingRequest = await db.friendRequest.findFirst({
-				where: {
-					OR: [
-						{ SenderID: senderId, ReceiverID: receiver.ID },
-						{ SenderID: receiver.ID, ReceiverID: senderId }
-					]
-				}
-			});
+			const existingRequest = await findFriendRequestByUsers(db, receiver.ID, senderId);
 			if (existingRequest) {
 				if (existingRequest.SenderID === senderId) {
 					return callback({ success: false, error: "Friend request already sent" });
 				}
 				// Accept friend request since both requested each other
-				const result = await acceptFriendRequest(existingRequest.ID, senderId);
+				const result = await handleAcceptFriendRequest(existingRequest.ID, senderId);
 				if (!result.success)
 					return callback(result);
 				return callback({ success: true });
 			}
 
 			// Create FriendRequest
-			const friendRequest = await db.friendRequest.create({
-				data: {
-					SentAt: new Date(),
-					Sender: {
-						connect: { ID: senderId },
-					},
-					Receiver: {
-						connect: { ID: receiver.ID },
-					}
-				}
-			});
+			const friendRequest = await createFriendRequest(db, senderId, receiver.ID);
 
-			// Send to user
-			const outgoingRequest: IncomingFriendRequest = {
-				requestId: friendRequest.ID,
-				sender: {
-					id: senderId,
-					alias: senderAlias,
-					online: true
-				},
-				sentAt: friendRequest.SentAt
-			}
-			io.to(receiver.ID.toString()).emit('newFriendRequest', outgoingRequest);
+			// Send notification to user
+			notifyFriendRequestSent(io, friendRequest, senderAlias);
 			callback({ success: true });
 		} catch (error) {
 			console.error("Prisma error sending friend request:", error);
@@ -134,7 +86,7 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 		const { userId: receiverId } = auth;
 
 		try {
-			const result = await acceptFriendRequest(requestId, receiverId);
+			const result = await handleAcceptFriendRequest(requestId, receiverId);
 			callback(result);
 		} catch (error) {
 			console.error("Prisma error accepting friend request:", error);
@@ -150,15 +102,14 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 		const { userId: receiverId } = auth;
 
 		try {
-			const request = await db.friendRequest.findUnique({
-				where: { ID: requestId }
-			});
+			// Find request
+			const request = await findFriendRequestById(db, requestId);
 			if (!request)
 				return callback({ success: false, error: "No request found" });
 			if (request.ReceiverID !== receiverId)
 				return callback({ success: false, error: "Unauthorized" });
 
-			await db.friendRequest.delete({ where: { ID: requestId }});
+			await removeFriendRequest(db, requestId);
 			callback({ success: true });
 
 		} catch (error) {
