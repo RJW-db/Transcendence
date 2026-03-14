@@ -10,7 +10,7 @@ export async function findFriendRequestById(db: PrismaClient, requestId: number)
 }
 
 export async function findFriendRequestByUsers(
-	db: PrismaClient, 
+	db: PrismaClient | Prisma.TransactionClient,
 	userAId: number, 
 	userBId: number,
 ) {

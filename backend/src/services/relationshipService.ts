@@ -2,7 +2,7 @@ import type { PrismaClient, Prisma } from '@prisma/client';
 import { MyServer, UserData } from '../types';
 
 export async function areFriends(
-	db: PrismaClient,
+	db: PrismaClient | Prisma.TransactionClient,
 	userAId: number,
 	userBId: number,
 ) {
@@ -30,6 +30,13 @@ export async function createFriend(
 	});
 }
 
+export async function removeFriend(
+	db: PrismaClient | Prisma.TransactionClient,
+	friendId: number,
+) {
+	return db.friend.delete({ where: { ID: friendId }});
+}
+
 export function notifyFriendshipCreated(
 	io: MyServer,
 	senderId: number,
@@ -53,3 +60,4 @@ export function notifyFriendshipCreated(
 	io.to(senderId.toString()).emit('newFriend', senderView);
 	io.to(receiverId.toString()).emit('newFriend', receiverView);
 }
+

@@ -4,6 +4,7 @@ import { requireUser } from '../services/authService';
 import { createFriendRequest, finalizeFriendRequest, findFriendRequestById, findFriendRequestByUsers, notifyFriendRequestSent, removeFriendRequest } from '../services/friendRequestService';
 import { areFriends, notifyFriendshipCreated } from '../services/relationshipService';
 import { findUser } from '../services/userService';
+import { findBlock } from 'src/services/blockService';
 
 // TODO: clean up handler by adding service functions
 
@@ -30,7 +31,6 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 	}
 
 
-	// TODO: Check if receiver has blocked sender
 	socket.on('sendFriendRequest', async (req: OutgoingFriendRequest, callback: (response: ActionResponse) => void) => {
 		const auth = requireUser(socket, callback);
 		if (!auth)
@@ -47,6 +47,11 @@ export async function friendRequestHandler({ io, socket, db }: SocketContext) {
 			const receiver = await findUser(db, req.receiverAlias);
 			if (!receiver)
 				return callback({ success: false, error: "User does not exist" });
+
+			// Check if user is blocked
+			const blocked = await findBlock(db, receiver.ID, senderId);
+			if (blocked)
+				return callback({ success: false, error: "Blocked by user" });
 
 			// Check if user are already friends
 			const existing = await areFriends(db, receiver.ID, senderId);

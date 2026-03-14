@@ -2,13 +2,13 @@ import { SocketContext, OutgoingDirectMessage, IncomingDirectMessage, ActionResp
 import { requireUser } from '../services/authService';
 import { findUser } from '../services/userService';
 import { createDirectMessage, findUnreadDirectMessages, markDirectMessageAsRead, notifyDirectMessage, sendUnreadDirectMessages } from '../services/directMessageService';
+import { findBlock } from 'src/services/blockService';
 
 // Add logger instead of using console.log
 // TODO: clean up handler by adding service functions
 
 export async function directMessageHandler({ io, socket, db }: SocketContext) {
 
-	// TODO: check if reciever hasn't blocked sender
 	socket.on('sendDirectMessage', async (msg: OutgoingDirectMessage, callback: (response: ActionResponse) => void) => {
 		const auth = requireUser(socket, callback);
 		if (!auth)
@@ -25,6 +25,11 @@ export async function directMessageHandler({ io, socket, db }: SocketContext) {
 			if (!receiver) {
 				return callback({ success: false, error: "User does not exist" });
 			}
+
+			// Check if user is blocked
+			const blocked = await findBlock(db, receiver.ID, senderId);
+			if (blocked)
+				return callback({ success: false, error: "Blocked by user" });
 
 			// Add to database
 			const savedMessage = await createDirectMessage(db, senderId, receiver.ID, msg.message);
