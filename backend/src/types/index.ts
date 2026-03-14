@@ -50,7 +50,7 @@ export interface ClientToServerEvents {
   startTournament: (msg: string) => void;
   sendDirectMessage: (msg: OutgoingDirectMessage, callback: (response: ActionResponse) => void) => void;
   loadUnreadMessages: (callback: (response: ActionResponse) => void) => void;
-  readMessage: (messageId: number) => void;
+  readMessage: (messageId: number, callback: (response: ActionResponse) => void) => void;
   sendFriendRequest: (req: OutgoingFriendRequest, callback: (response: ActionResponse) => void) => void;
   acceptFriendRequest: (requestId: number, callback: (response: ActionResponse) => void) => void;
   declineFriendRequest: (requestId: number, callback: (response: ActionResponse) => void) => void;

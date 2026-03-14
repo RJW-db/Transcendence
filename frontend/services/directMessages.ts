@@ -32,8 +32,18 @@ export function initDirectMessages() {
 	};
 
 	window.readDM = (ID: number) => {
-		socket.emit('readMessage', ID);
-	}
+		socket.emit(
+			'readMessage',
+			ID,
+			(response: ActionResponse) => {
+				if (!response.success) {
+					console.error('Error:', response.error);
+				} else {
+					console.log('Message marked as read:', ID);
+				}
+			}
+		);
+	};
 
 	window.sendFriendRequest = (alias: string) => {
 		socket.emit(

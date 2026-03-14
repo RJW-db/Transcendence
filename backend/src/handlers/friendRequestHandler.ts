@@ -1,5 +1,5 @@
 import { SocketContext } from '../types';
-import type { ActionResponse, IncomingFriendRequest, OutgoingFriendRequest, UserData } from '../types';
+import type { ActionResponse, OutgoingFriendRequest } from '../types';
 import { requireUser } from '../services/authService';
 import { createFriendRequest, finalizeFriendRequest, findFriendRequestById, findFriendRequestByUsers, notifyFriendRequestSent, removeFriendRequest } from '../services/friendRequestService';
 import { areFriends, notifyFriendshipCreated } from '../services/relationshipService';

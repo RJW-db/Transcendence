@@ -1,5 +1,5 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
-import { MyServer, UserData } from 'src/types';
+import { MyServer, UserData } from '../types';
 
 export async function areFriends(
 	db: PrismaClient,
